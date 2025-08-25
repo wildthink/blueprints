@@ -1,30 +1,29 @@
 //
-//  KituraMiniHandlebarsError.swift
-//  Handlebars
+//  Handlebars.swift
+//  TemplateEngine
 //
 //  Created by Jason Jobe on 8/25/25.
 //
 
 
-/**
- * Copyright Jan Vojáček 2018
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
-
 import Foundation
-//import KituraTemplateEngine;
 
+extension NSMutableDictionary {
+    @objc func boolValue(forKeyPath key: Substring?) -> Bool {
+        guard let key else { return false }
+        let flag = self.value(forKeyPath: key.description)
+        return switch flag {
+        case let it as Int: (it != 0)
+        case let it as Bool: it
+        case .none: false
+        case .some(_): true // Any non-nil will do
+        }
+    }
+    
+    var dot: NSObject? {
+        self.value(forKeyPath: ".") as? NSObject
+    }
+}
 
 public enum KituraMiniHandlebarsError: Error {
     case RangeError
@@ -138,14 +137,14 @@ public class MiniHandlebars: TemplateEngine {
         
         var commands = getAllCommands(from: from)
         var rendered: String = "";
-        var cp = context
-        try render(commands: &commands, context: &cp, into: &rendered)
+        let cp = (context as NSDictionary).mutableCopy() as! NSMutableDictionary
+        try render(commands: &commands, context: cp, into: &rendered)
         return rendered
     }
         
     func render (
         commands: inout [Command],
-        context: inout [String: Any],
+        context: NSMutableDictionary,
         into rendered: inout String
     ) throws {
 
@@ -157,15 +156,8 @@ public class MiniHandlebars: TemplateEngine {
             switch cmd.op {
             case .if:
                 // if true process until else/endif
-                let flag = context.boolValue(forKey: cmd.argv.first)
+                let flag = context.boolValue(forKeyPath: cmd.argv.first)
                 conds.append((cmd, flag))
-//                if let value = context.value(forKey: cmd.argv.first) {
-//                    // NOTE: non-Bool, non-nil -> TRUE
-//                    let flag = (value as? Bool) ?? true
-//                    conds.append((cmd, flag))
-//                } else {
-//                    conds.append((cmd, false))
-//                }
             case .else:
                 guard let (cmd, flag) = conds.last
                 else {
@@ -177,7 +169,7 @@ public class MiniHandlebars: TemplateEngine {
                 if cmd.argv.isEmpty {
                     conds.append((cmd, !flag))
                 } else {
-                    let myflag = context.boolValue(forKey: cmd.argv.last)
+                    let myflag = context.boolValue(forKeyPath: cmd.argv.last)
                     conds.append((cmd, myflag))
                 }
 
@@ -195,15 +187,22 @@ public class MiniHandlebars: TemplateEngine {
                 rendered.append(cmd.raw.description)
                 
             case .eval:
-                if let value = context.value(forKey: cmd.argv.first) {
+                guard let key = cmd.argv.first?.description
+                else {
+                    continue
+                }
+                if let value = context.value(forKeyPath: key) {
+                    rendered.append(String(describing: value))
+                } else if let value = context.dot?.value(forKeyPath: key) {
                     rendered.append(String(describing: value))
                 } else {
-                    print("NO VALUE for", cmd.argv.first)
+                    print("NO VALUE for", key)
                 }
             case .each:
+                print("EACH", cmd.argv.first)
                 // FIXME: Should wrap a Cursor around the array
                 // FIXME: ONLY uses the first item
-                guard let list = context.value(forKey: cmd.argv.first) as? Array<Any>
+                guard let list = context.value(forKeyPath: cmd.argv.first?.description ?? "") as? Array<Any>
                 else { continue }
                 context["."] = list.first
 //                var ctx = context
@@ -215,67 +214,6 @@ public class MiniHandlebars: TemplateEngine {
                 rendered.append(cmd.raw.description)
             }
         }
-    }
-    
-    /// Returns the exact position of a desired end tag of a command in the array of commands offseted by an offset specified.
-    ///
-    /// - Parameters:
-    ///   - commands: Array of commands.
-    ///   - offset: Offset of a desired conditional ending tag to be found.
-    /// - Returns: Index of desired tag.
-    private static func getIndexOfEndTag (commands: Array<String>, offset: Int, endTag: String) -> Int? {
-        
-        var endIndexIterations: Int = -1;
-        
-        let indexOfEnd = commands.firstIndex(where: { (command) -> Bool in
-            
-            if command.range(of: endTag) != nil {
-                
-                endIndexIterations += 1;
-                
-                if endIndexIterations == offset {
-                    return true;
-                }
-            }
-            
-            return false;
-        });
-        
-        return indexOfEnd;
-    }
-    
-    /// Returns offset of a right ending tag of an requested command currently being processed (on the first place in the 'commands' parameter).
-    ///
-    /// - Parameter commands: Array of commands.
-    /// - Returns: Offset of a right end tag of the first processed conditional command..
-    private static func getEndCommandOffset (commands: Array<String>, startTag: String, endTag: String) -> Int {
-        
-        var commandsToProcess: Array<String> = commands;
-        commandsToProcess.removeFirst();
-        
-        var offset: Int = 0;
-        var start: Int = 0;
-        var end: Int = 0;
-        
-        for command in commandsToProcess {
-            
-            if command.range(of: startTag) != nil {
-                start += 1;
-                continue;
-            }
-            
-            if command.range(of: endTag) != nil {
-                
-                if start == end {
-                    return offset;
-                }
-                
-                end += 1;
-                offset += 1;
-            }
-        }
-        
-        return offset;
     }
     
 
@@ -312,11 +250,7 @@ public class MiniHandlebars: TemplateEngine {
                 curs.advance()
             }
         }
-
         return commands
-        
-        func read_cmd() {}
-        
     }
     
 }

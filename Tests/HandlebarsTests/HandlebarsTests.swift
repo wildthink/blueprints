@@ -21,12 +21,9 @@ import Foundation
         filePath: rurl.appending(component: "resume.handlebars").path,
         context: ["resume": input], options: .init())
 
-//    let html = try engine.render(
-//        filePath: "resume",
-//        context: ["resume": input],
-//        options: KituraMiniHandlebarsOptions(),
-//        templateName: "resume")
+//    let output = URL(filePath: "/Users/jason/dev/workspace/Packages/Handlebars/Generated")
+    let output = rurl.appending(components: "../..", "Generated", "resume.html")
+    try html.write(to: output, atomically: true, encoding: .utf8)
     
-    print(html)
     print("DONE", #function)
 }

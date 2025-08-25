@@ -6,31 +6,13 @@
 //
 
 
-/*
- * Copyright IBM Corporation 2015, 2017
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-
 public protocol RenderingOptions {}
 
 public struct NullRenderingOptions: RenderingOptions {
     public init() {}
 }
 
-/// Template Engine protocol for Kitura. Implemented by Templating Engines in order to
-/// integrate with Kitura's content generation APIs.
+/// Template Engine protocol
 ///
 /// - Note: Influenced by http://expressjs.com/en/guide/using-template-engines.html
 public protocol TemplateEngine {
@@ -115,44 +97,52 @@ extension TemplateEngine {
     public func setRootPaths(rootPaths: [String]) {}
 }
 
-extension [String:Any] {
-    
-    func boolValue<S: StringProtocol>(forKey key: S?) -> Bool {
-        guard let key else { return false }
-        let path = key.split(separator: ".")
-        if let result = value(forPath: path) {
-            return (result as? Bool) ?? true // any non-nil is TRUE
-        } else {
-            // nil is FALSE
-            return false
-        }
-    }
+import Foundation
 
-    func value<S: StringProtocol>(forKey key: S?) -> Any? {
-        guard let key else { return nil }
-        let path = key.split(separator: ".")
-        return value(forPath: path)
-    }
-    
-    func value<S: StringProtocol>(forPath kp: [S]) -> Any? {
-        guard let key = kp.first?.description
-        else { return nil }
-        
-        if let value = self[key.description] {
-            let rest = kp.dropFirst()
-            if rest.isEmpty {
-                return value
-            }
-            if let dict = value as? [String:Any] {
-                return dict.value(forPath: Array(rest))
-            } else {
-                return value
-            }
-        }
-        else if let dot = (self["."] as? [String:Any]) {
-            return dot.value(forPath: kp)
-        }
-        return nil
-    }
-
-}
+//extension [String:Any] {
+//    
+//    func boolValue<S: StringProtocol>(forKey key: S?) -> Bool {
+//        guard let key else { return false }
+//        if let result = value(forKey: key) {
+//            return (result as? Bool) ?? true // any non-nil is TRUE
+//        } else {
+//            // nil is FALSE
+//            return false
+//        }
+//    }
+//
+//    func value<S: StringProtocol>(forKey key: S?) -> Any? {
+//        guard let key else { return nil }
+//        if let nob = self as? NSObject {
+//            return nob.value(forKeyPath: key.description)
+//        }
+//        let path = key.split(separator: ".")
+//        return value(forPath: path) ?? self.dot?.value(forPath: path)
+//    }
+//    
+//    func value<S: StringProtocol>(forPath kp: [S]) -> Any? {
+//        guard let key = kp.first?.description
+//        else { return nil }
+//        
+//        if let value = self[key.description] {
+//            let rest = kp.dropFirst()
+//            if rest.isEmpty {
+//                return value
+//            }
+//            if let dict = value as? [String:Any] {
+//                return dict.value(forPath: Array(rest))
+//            } else {
+//                return value
+//            }
+//        }
+////        else if let dot = (self["."] as? [String:Any]) {
+////            return dot.value(forPath: kp)
+////        }
+//        return nil
+//    }
+//
+//    var dot: [String:Any]? {
+//        get { self["."] as? [String:Any] }
+//        set { self["."] = newValue }
+//    }
+//}
