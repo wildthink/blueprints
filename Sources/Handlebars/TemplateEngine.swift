@@ -28,7 +28,7 @@ public protocol TemplateEngine {
     ///                      the content.
     /// - Parameter context: A set of variables in the form of a Dictionary of
     ///                     Key/Value pairs, that can be used when generating the content.
-    func render(filePath: String, context: [String: Any]) throws -> String
+//    func render(filePath: String, context: [String: Any]) throws -> String
 
     /// Take a template file and a set of "variables" in the form of a context
     /// and generate content to be sent back to the client.
@@ -39,8 +39,8 @@ public protocol TemplateEngine {
     ///                     Key/Value pairs, that can be used when generating the content.
     /// - Parameter options: rendering options, different per each template engine
     ///
-    func render(filePath: String, context: [String: Any],
-                options: RenderingOptions) throws -> String
+//    func render(filePath: String, context: [String: Any],
+//                options: RenderingOptions) throws -> String
 
     /// Take a template file and a set of "variables" in the form of a context
     /// and generate content to be sent back to the client.
@@ -53,8 +53,8 @@ public protocol TemplateEngine {
     ///
     /// - Parameter templateName: the name of the template
     ///
-    func render(filePath: String, context: [String: Any],
-                options: RenderingOptions, templateName: String) throws -> String
+//    func render(filePath: String, context: [String: Any],
+//                options: RenderingOptions, templateName: String) throws -> String
 
     /// Take a template file and an Encodable type and generate the content to be sent back to the client.
     ///
@@ -78,71 +78,21 @@ public protocol TemplateEngine {
     func setRootPaths(rootPaths: [String])
 }
 
-extension TemplateEngine {
-    // Implementation of render with options parameter for TemplateEngines
-    // that do not implement it
-    public func render(filePath: String, context: [String: Any],
-                       options: RenderingOptions) throws -> String {
-        return try render(filePath: filePath, context: context)
-    }
-
-    // Implementation of render with options and templateName parameter for TemplateEngines
-    // that do not implement it
-    public func render(filePath: String, context: [String: Any],
-                       options: RenderingOptions, templateName: String) throws -> String {
-        return try render(filePath: filePath, context: context, options: options)
-    }
-
-    // Implementation of setRootPaths for TemplateEngines that do not implement it
-    public func setRootPaths(rootPaths: [String]) {}
-}
-
-import Foundation
-
-//extension [String:Any] {
-//    
-//    func boolValue<S: StringProtocol>(forKey key: S?) -> Bool {
-//        guard let key else { return false }
-//        if let result = value(forKey: key) {
-//            return (result as? Bool) ?? true // any non-nil is TRUE
-//        } else {
-//            // nil is FALSE
-//            return false
-//        }
+//extension TemplateEngine {
+//    // Implementation of render with options parameter for TemplateEngines
+//    // that do not implement it
+//    public func render(filePath: String, context: [String: Any],
+//                       options: RenderingOptions) throws -> String {
+//        return try render(filePath: filePath, context: context)
 //    }
 //
-//    func value<S: StringProtocol>(forKey key: S?) -> Any? {
-//        guard let key else { return nil }
-//        if let nob = self as? NSObject {
-//            return nob.value(forKeyPath: key.description)
-//        }
-//        let path = key.split(separator: ".")
-//        return value(forPath: path) ?? self.dot?.value(forPath: path)
-//    }
-//    
-//    func value<S: StringProtocol>(forPath kp: [S]) -> Any? {
-//        guard let key = kp.first?.description
-//        else { return nil }
-//        
-//        if let value = self[key.description] {
-//            let rest = kp.dropFirst()
-//            if rest.isEmpty {
-//                return value
-//            }
-//            if let dict = value as? [String:Any] {
-//                return dict.value(forPath: Array(rest))
-//            } else {
-//                return value
-//            }
-//        }
-////        else if let dot = (self["."] as? [String:Any]) {
-////            return dot.value(forPath: kp)
-////        }
-//        return nil
+//    // Implementation of render with options and templateName parameter for TemplateEngines
+//    // that do not implement it
+//    public func render(filePath: String, context: [String: Any],
+//                       options: RenderingOptions, templateName: String) throws -> String {
+//        return try render(filePath: filePath, context: context, options: options)
 //    }
 //
-//    var dot: [String:Any]? {
-//        get { self["."] as? [String:Any] }
-//        set { self["."] = newValue }
-//    }
+//    // Implementation of setRootPaths for TemplateEngines that do not implement it
+//    public func setRootPaths(rootPaths: [String]) {}
 //}

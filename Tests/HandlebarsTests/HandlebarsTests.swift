@@ -14,8 +14,8 @@ import Foundation
 
     let data = try Data(contentsOf: rurl.appending(component: "resume.json"))
     let input = try JSONSerialization.jsonObject(with: data)
-    let engine = MiniHandlebars()
-    engine.setRootPaths(rootPaths: [resource_dir])
+    let engine = Handlebars()
+//    engine.setRootPaths(rootPaths: [resource_dir])
     
     let html = try engine.render(
         filePath: rurl.appending(component: "resume.handlebars").path,
@@ -27,3 +27,17 @@ import Foundation
     
     print("DONE", #function)
 }
+
+//@Test func testCursor() {
+//    
+//    let txt = "0123456789ABCDE" // That are Bookmarklets? How to Use JavaScript to Make a Bookmarklet in Chromium and Firefox"
+//    
+//    var cur = Scanner(txt)
+//    
+//    while let el = cur.next() {
+//        print(el)
+//        cur.jump(by: 2)
+////        print (el.window)
+//    }
+//    print("fin")
+//}
