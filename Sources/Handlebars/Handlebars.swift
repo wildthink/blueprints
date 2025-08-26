@@ -353,6 +353,7 @@ extension Cursor<[Command]> {
                     }
                 }
             case .text:
+                continue
                 // enigine.emit(cmd.eval(in: env))
             case .eval:
                 if let value = cmd.eval(in: env) {
