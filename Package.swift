@@ -9,10 +9,18 @@ let package = Package(
         .macOS(.v15), .iOS(.v17),
     ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "Blueprints",
             targets: ["Handlebars"]),
+        .executable(
+            name: "blue",
+            targets: ["blue"]),
+    ],
+    dependencies: [
+        .package(path: "/Users/jason/dev/workshop/ThirdParty/swift-html"),
+//        .package(url: "https://github.com/coenttb/pointfree-html.git", from: "2.0.0"),
+//        .package(url: "https://github.com/pointfreeco/swift-html", from: "0.5.0"),
+//        .package(url: "https://github.com/coenttb/swift-html.git", from: "0.3.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -22,6 +30,14 @@ let package = Package(
         .testTarget(
             name: "HandlebarsTests",
             dependencies: ["Handlebars"]
+        ),
+        .executableTarget(
+            name: "blue",
+            dependencies: [
+                "Handlebars",
+                .product(name: "HTML", package: "swift-html"),
+//                .product(name: "Html", package: "swift-html"),
+            ]
         ),
     ]
 )

@@ -1,0 +1,55 @@
+            :root {
+              --bg: #0b0c10;
+              --surface: #111217;
+              --text: #e6e6e6;
+              --muted: #a0a0a0;
+              --accent: #4f8cff;
+              --accent-2: #7a5cff;
+              --radius: 12px;
+              --maxw: 1100px;
+            }
+            * { box-sizing: border-box; }
+            html, body { height: 100%; }
+            body {
+              margin: 0; padding: 0; background: var(--bg); color: var(--text);
+              font: -apple-system-body; font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            }
+            a { color: var(--text); text-decoration: none; }
+            a:hover { color: var(--accent); }
+            
+            header {
+              position: sticky; top: 0; z-index: 10;
+              backdrop-filter: saturate(180%) blur(12px);
+              background: color-mix(in oklab, var(--surface) 85%, transparent);
+              border-bottom: 1px solid #22252b;
+            }
+            .nav { max-width: var(--maxw); margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 16px; }
+            .nav .grow { flex: 1; }
+            .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; }
+            .pill { padding: 6px 12px; border: 1px solid #2a2d35; border-radius: 999px; background: #14161c; }
+            
+            .container { max-width: var(--maxw); margin: 0 auto; padding: 24px 20px; }
+            main { display: grid; gap: 20px; grid-template-columns: 1fr; }
+            .hero { padding: 20px; border: 1px solid #1b1e25; border-radius: var(--radius);
+                    background: linear-gradient(180deg, #151822, #111217); }
+            .hero h1 { margin: 0 0 8px 0; font-size: clamp(22px, 4vw, 36px); }
+            .hero p { margin: 0; color: var(--muted); }
+            
+            .grid { display: grid; gap: 16px; grid-template-columns: repeat(1, minmax(0, 1fr)); }
+            .card { border: 1px solid #1b1e25; border-radius: var(--radius); padding: 16px; background: #0f1117; }
+            .card h3 { margin: 0 0 6px 0; font-size: 16px; }
+            .card p { margin: 0; color: var(--muted); }
+            
+            aside { display: grid; gap: 12px; }
+            .well { border: 1px dashed #2a2d35; border-radius: var(--radius); padding: 14px; color: var(--muted); }
+            
+            footer { border-top: 1px solid #22252b; color: var(--muted); }
+            footer .container { padding-top: 18px; padding-bottom: 18px; }
+            
+            @media (min-width: 720px) {
+              main { grid-template-columns: 2fr 1fr; align-items: start; }
+              .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            }
+            @media (min-width: 1024px) {
+              .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            }
