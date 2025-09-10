@@ -6,8 +6,121 @@
 //
 
 import Foundation
-import PointFreeHTML
-import HTML
+
+public protocol HTML: Rule {
+    func render() -> String
+}
+
+typealias HTMLBuilder = RuleBuilder
+extension RuleArray: HTML {
+    public func render() -> String {
+        // FIXME:
+        ""
+    }
+}
+
+struct HxToken: Sendable, Hashable, Equatable {
+    var name: String
+    init(_ tag: String) {
+        self.name = tag
+    }
+}
+
+extension HxToken {
+    static let viewport: HxToken = "viewport"
+    static let stylesheet: HxToken = "stylesheet"
+    static let href: HxToken = "href"
+}
+
+extension HxToken: ExpressibleByStringLiteral {
+    public init(stringLiteral value: StringLiteralType) {
+        name = value
+    }
+}
+
+let meta: HTMLRaw = "meta"
+let link: HTMLRaw = "link"
+
+let a: HTMLRaw = "link"
+let nav: HTMLRaw = "nav"
+
+let h1: HTMLRaw = "h1"
+let h2: HTMLRaw = "h2"
+let h3: HTMLRaw = "h3"
+let p: HTMLRaw = "p"
+let div: HTMLRaw = "div"
+
+let main: HTMLRaw = "main"
+let header: HTMLRaw = "header"
+let footer: HTMLRaw = "footer"
+
+let section: HTMLRaw = "section"
+let article: HTMLRaw = "article"
+let aside: HTMLRaw = "aside"
+
+extension String: HTML {
+    public func render() -> String {
+        self
+    }
+}
+
+// Removed extension HTMLRaw with callAsFunction overloads to avoid ambiguity
+
+func tester() {
+    let _ = "asff".data(using: .utf8)
+    let tag: HTMLRaw = "fpp"
+    _ = tag.render()
+    _ = StyleHTML(href: "site.css").render()
+}
+
+@dynamicCallable
+struct HTMLRaw: HTML {
+    
+    var tag: String
+    init(_ tag: String) {
+        self.tag = tag
+    }
+    
+    func render() -> String { tag }
+    
+    func dynamicallyCall(withKeywordArguments: KeyValuePairs<String,Any>) -> some HTML {
+        self
+    }
+}
+
+@HTMLBuilder
+var bob: some HTML {
+    hx(foo: 23) {
+        "okay"
+    }
+}
+
+extension HTML {
+    @discardableResult
+    func `class`(_ cls: Class) -> Self {
+        self
+    }
+}
+
+extension HTMLRaw: ExpressibleByStringLiteral {
+    public init(stringLiteral value: StringLiteralType) {
+        tag = value
+    }
+}
+
+public struct Class: Sendable, ExpressibleByStringLiteral, CustomStringConvertible, Hashable, Equatable {
+    public var rawValue: String
+    
+    public init(rawValue: String) {
+        self.rawValue = rawValue
+    }
+    
+    public init(stringLiteral value: StringLiteralType) {
+        rawValue = value
+    }
+    public var description: String { rawValue }
+}
+
 
 public extension Class {
     static let brand: Class = "brand"
@@ -23,22 +136,24 @@ public extension Class {
 
 struct StyleHTML: HTML {
     var href: String = "style.css"
-    
-    var body: some HTML {
-        HTMLRaw(#"<link rel="stylesheet" href="\#(href)">"#)
+    func render() -> String {
+        HTMLRaw(#"<link rel=\"stylesheet\" href=\"\#(href)\">"#).render()
     }
 }
 
-struct WelcomePage: HTMLDocumentProtocol {
+let hx: HTMLRaw = "hx"
+
+struct WelcomePage: Rule {
     let userName: String
     
+    @HTMLBuilder
     var head: some HTML {
-        meta(charset: .utf8)
-        meta(name: .viewport, content: "width=device-width, initial-scale=1")
-        link(href: "site.css", rel: .stylesheet)
+        HTMLRaw("<meta charset=\"utf-8\">")
+        HTMLRaw("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">")
+        HTMLRaw("<link rel=\"stylesheet\" href=\"site.css\">")
     }
     
-    var body: some HTML {
+    var body: some Rule {
         header {
             nav {
                 a(href: "/") { "Blueprints" }
@@ -81,9 +196,9 @@ struct WelcomePage: HTMLDocumentProtocol {
 
                 aside {
                     div { "Tip: Use ⌘K to search anything." }
-                        .attribute("class", "well")
+                        .class("well")
                     div { "You’re signed in as \(userName)." }
-                        .attribute("class", "well")
+                        .class("well")
                 }
             }
             .class(.container)
@@ -91,10 +206,11 @@ struct WelcomePage: HTMLDocumentProtocol {
         
         footer {
             div {
-                small { "© \(Calendar.current.component(.year, from: Date())) Blueprints. All rights reserved." }
+                p { "© \(Calendar.current.component(.year, from: Date())) Blueprints. All rights reserved." }
             }
-            .attribute("class", "container")
+            .class("container")
         }
     }
 
 }
+
