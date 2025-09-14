@@ -38,8 +38,13 @@ extension HxToken: ExpressibleByStringLiteral {
     }
 }
 
-let meta: HTMLRaw = "meta"
-let link: HTMLRaw = "link"
+extension HTML {
+    var meta: HTMLRaw { "meta" }
+    var link: HTMLRaw { "link" }
+}
+
+//let meta: HTMLRaw = "meta"
+//let link: HTMLRaw = "link"
 
 let a: HTMLRaw = "link"
 let nav: HTMLRaw = "nav"

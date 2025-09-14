@@ -11,7 +11,9 @@ let package = Package(
     products: [
         .library(
             name: "Blueprints",
-            targets: ["Handlebars"]),
+            targets: [
+                "Handlebars"
+            ]),
         .executable(
             name: "blue",
             targets: ["blue"]),
@@ -29,7 +31,10 @@ let package = Package(
             name: "Handlebars"),
         .testTarget(
             name: "HandlebarsTests",
-            dependencies: ["Handlebars"]
+            dependencies: [
+                "Handlebars",
+                "blue",
+            ]
         ),
         .executableTarget(
             name: "blue",
