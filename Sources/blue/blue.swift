@@ -5,7 +5,7 @@ import Foundation
 
 @main
 struct BlueMain {
-    static func main() throws {
+    static func main() async throws {
         print("Hello, world")
         
         let output_dir = URL(fileURLWithPath: #filePath)
@@ -18,6 +18,8 @@ struct BlueMain {
             .appending(components: "site", "index.html")
             .standardized
         
+        try await createExampleSite()
+
 //        return try String(Greeting(name: name))
 
         // Render the page

@@ -323,7 +323,7 @@ public final class TALEngineXML {
     /// Template resolver closure for inheritance
     public var templateResolver: ((String) -> String?)?
 
-    public init(templateResolver: ((String) -> String?)? = nil) {
+    public init(_ templateResolver: ((String) -> String?)? = nil) {
         self.templateResolver = templateResolver
     }
 
