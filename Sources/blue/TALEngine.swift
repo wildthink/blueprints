@@ -74,11 +74,22 @@ public enum TALAttr: String {
     /// applied on a given Node (higher number = higher precedence)
     public var rank: Int {
         switch self {
-            case .condition: return 4  // Highest precedence - can remove element
-            case .repeat_: return 3    // Second - can create multiple elements
-            case .replace: return 2    // Third - replaces entire element
-            case .attributes: return 1 // Fourth - modifies attributes
-            case .content: return 0    // Lowest - modifies content
+            case .condition: 4  // Highest precedence - can remove element
+            case .repeat_: 3    // Second - can create multiple elements
+            case .replace: 2    // Third - replaces entire element
+            case .attributes: 1 // Fourth - modifies attributes
+            case .content: 0    // Lowest - modifies content
+        }
+    }
+    
+    init?(_ qn: QName) {
+        guard qn.ns == "tal" else { return nil }
+        switch qn.name.lowercased() {
+            case "content": self = .content
+            case "replace": self = .replace
+            case "repeat": self = .repeat_
+            case "attributes": self = .attributes
+            default: return nil
         }
     }
 }
@@ -86,15 +97,38 @@ public enum TALAttr: String {
 public struct TALDirective {
     /// The engine "instruction code"
     var tag: TALAttr
-    /// An array of all the tokens of the Node's attribute
+    /// An array of all the tokens of the Node's attribute (trimmed and cleaned)
     var argv: [String]
+    /// The full expression as a single string (for convenience)
+//    var expression: String
     var rank: Int { tag.rank }
+
+    subscript(ndx: Int) -> String {
+        guard ndx < argv.count else { return "" }
+        return argv[ndx]
+    }
+    
+    init(_ tag: TALAttr, argv: Any...) {
+        self.tag = tag
+        self.argv = argv.map(String.init(describing:))
+    }
+
+    init(_ tag: TALAttr, argv: [String]) {
+        self.tag = tag
+        self.argv = argv
+    }
     
     init?(_ kv: DTFValue) {
-        guard let attr = TALAttr(rawValue: kv.qname.description)
+        guard let attr = TALAttr(kv.qname)
         else { return nil }
         tag = attr
-        argv = kv.value.split(separator: " ").map(String.init)
+
+        // Clean up the value and split into arguments
+        let cleanValue = kv.value.trimmingCharacters(in: .whitespacesAndNewlines)
+        argv = cleanValue.split(separator: " ").map {
+            String($0).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+//        expression = cleanValue
     }
 }
 
@@ -125,32 +159,27 @@ public final class TALEngineXML {
             switch directive.tag {
             case .condition:
                 // tal:condition - may remove element entirely
-                let expr = directive.argv.joined(separator: " ")
-                let result = evaluateExpression(expr, ctx: ctx)
+                let result = evaluateExpression(directive, ctx: ctx)
                 if !result.bool {
                     return nil // Remove element
                 }
 
             case .repeat_:
                 // tal:repeat - may create multiple elements
-                let directiveStr = directive.argv.joined(separator: " ")
-                return processRepeat(node: node, directive: directiveStr, ctx: ctx)
+                return processRepeat(node: node, directive: directive, ctx: ctx)
 
             case .replace:
                 // tal:replace - replaces entire element
-                let expr = directive.argv.joined(separator: " ")
-                let result = evaluateExpression(expr, ctx: ctx)
+                let result = evaluateExpression(directive, ctx: ctx)
                 return DTFValue(qname: QName(name: "text"), value: result.string)
 
             case .attributes:
                 // tal:attributes - modifies attributes
-                let directiveStr = directive.argv.joined(separator: " ")
-                node = processAttributes(node: node, directive: directiveStr, ctx: ctx)
+                node = processAttributes(node: node, directive: directive, ctx: ctx)
 
             case .content:
                 // tal:content - replaces element content
-                let expr = directive.argv.joined(separator: " ")
-                let result = evaluateExpression(expr, ctx: ctx)
+                let result = evaluateExpression(directive, ctx: ctx)
                 node = DTFNode(tag: node.qname, attributes: node.attributes,
                               children: [DTFValue(qname: QName(name: "text"), value: result.string)])
             }
@@ -165,81 +194,49 @@ public final class TALEngineXML {
         return node
     }
 
-    private func processRepeat(node: DTFNode, directive: String, ctx: TALContext) -> DTFNode? {
-        // Parse "var in collection" syntax
-        let parts = directive.split(separator: " in ", maxSplits: 1)
-        guard parts.count == 2 else { return node }
-
-        let varName = String(parts[0]).trimmingCharacters(in: .whitespaces)
-        let collectionExpr = String(parts[1]).trimmingCharacters(in: .whitespaces)
-
-        let collection = evaluateExpression(collectionExpr, ctx: ctx)
-        guard let array = collection.raw as? [Any] else { return node }
-
+    private func processRepeat(node: DTFNode, directive: TALDirective, ctx: TALContext) -> DTFNode? {
+         // eg. "p in people"
+        guard let array = ctx[directive[2]].raw as? [Any]
+        else { return node }
+        let varName = directive[0]
+        
         // Create repeated elements
         var results: [any AnyDTFNode] = []
+        
+        // WARNING: MUST remove the repeat to avoid infinite recursion
+        var step = node
+        step.removeAttribute(named: "tal:repeat")
+        
         for (index, item) in array.enumerated() {
             ctx.push([varName: item, "\(varName)__index": index])
-            if let processed = try? process(elem: node, ctx: ctx) {
+            if let processed = try? process(elem: step, ctx: ctx) {
                 results.append(processed)
             }
             ctx.pop()
         }
-
         // Return a container with all repeated elements
         return DTFNode(tag: QName(name: "repeat-container"), attributes: [], children: results)
     }
 
-    private func processAttributes(node: DTFNode, directive: String, ctx: TALContext) -> DTFNode {
-        var newAttributes = node.attributes.filter { $0.qname.ns != "tal" }
+    /// Attribute Subsitution example
+    /// tal:_src="lookup_value" -> src="the_value"
 
-        // Parse "attr expr; attr expr" syntax
-        let assignments = directive.split(separator: ";")
-        for assignment in assignments {
-            let parts = assignment.split(separator: " ", maxSplits: 1)
-            guard parts.count == 2 else { continue }
-
-            let attrName = String(parts[0]).trimmingCharacters(in: .whitespaces)
-            let expr = String(parts[1]).trimmingCharacters(in: .whitespaces)
-            let value = evaluateExpression(expr, ctx: ctx)
-
-            newAttributes.append(DTFValue(qname: QName(name: attrName), value: value.string))
-        }
-
-        return DTFNode(tag: node.qname, attributes: newAttributes, children: node.children)
+    private func processAttributes(
+        node: DTFNode,
+        directive: TALDirective,
+        ctx: TALContext
+    ) -> DTFNode {
+        print("FIXME", #function)
+        return node
+//        return DTFNode(tag: node.qname, attributes: newAttributes, children: node.children)
     }
 
-    private func evaluateExpression(_ expr: String, ctx: TALContext) -> TALValue {
-        // Handle ternary operator: "expr ? true_val : false_val"
-        if expr.contains("?") && expr.contains(":") {
-            return evaluateTernary(expr, ctx: ctx)
-        }
-
-        // Simple variable lookup
-        return ctx[expr.trimmingCharacters(in: .whitespaces)]
+    private func evaluateExpression(_ expr: TALDirective, ctx: TALContext) -> TALValue {
+        let value = ctx[expr[0]]
+        print("Evaluating: \(expr) -> \(value)")
+        return value
     }
 
-    private func evaluateTernary(_ expr: String, ctx: TALContext) -> TALValue {
-        let parts = expr.split(separator: "?", maxSplits: 1)
-        guard parts.count == 2 else { return ctx[expr] }
-
-        let condition = String(parts[0]).trimmingCharacters(in: .whitespaces)
-        let rest = String(parts[1])
-
-        let valueParts = rest.split(separator: ":", maxSplits: 1)
-        guard valueParts.count == 2 else { return ctx[expr] }
-
-        let trueVal = String(valueParts[0]).trimmingCharacters(in: .whitespacesAndNewlines)
-        let falseVal = String(valueParts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let condResult = ctx[condition]
-        let resultExpr = condResult.bool ? trueVal : falseVal
-
-        // Remove quotes if present
-        let cleanResult = resultExpr.trimmingCharacters(in: CharacterSet(charactersIn: "'\""))
-        return TALValue(raw: cleanResult)
-    }
-    
     private func serialize(elem: Element) -> String {
         if let dtfValue = elem as? DTFValue {
             // This is a text node - don't escape if it's already escaped content

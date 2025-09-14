@@ -50,7 +50,7 @@ struct DTFError: Error {
 
 // MARK: QName - Fully qualified name
 /// Fully qualified Name
-public struct QName: Sendable, Codable,
+public struct QName: Sendable, Codable, Hashable, Equatable,
             ExpressibleByStringLiteral, CustomStringConvertible {
     public var ns: String?
     public var name: String
@@ -102,10 +102,16 @@ extension Never: AnyDTFNode {
     public var value: Never { Optional<Never>.none! }
 }
 
-public struct DTFValue: AnyDTFNode {
+public struct DTFValue: AnyDTFNode, Equatable {
     public typealias Value = String
     public var qname: QName
     public var value: Value
+}
+
+extension DTFValue {
+   public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.qname == rhs.qname // && lhs.value == rhs.value
+    }
 }
 
 public struct DTFNode: AnyDTFNode {
@@ -122,6 +128,23 @@ public struct DTFNode: AnyDTFNode {
         self.qname = tag
         self.attributes = attributes ?? []
         self.value = children ?? []
+    }
+    
+    mutating func removeAttribute(named: String) {
+        guard let ndx = attributes.firstIndex(where: { $0.qname == named })
+        else { return }
+        attributes.remove(at: ndx)
+    }
+
+    func replace(attribute: DTFValue, with newValue: DTFValue) {
+        let ndx = attributes.firstIndex(of: attribute)
+    }
+}
+
+extension QName {
+    static func == (lhs: Self, rhs: String) -> Bool {
+        guard !rhs.isEmpty else { return false }
+        return lhs.description == rhs
     }
 }
 
@@ -142,7 +165,7 @@ private extension XMLNode {
 private extension QName {
     init (_ attr: XMLNode) {
         let local = attr.localName ?? attr.name ?? ""
-        let nsURI = attr.uri
+        let nsURI = attr.prefix // We want the short ns NOT attr.uri
         self = QName(ns: nsURI, name: local)
     }
 }

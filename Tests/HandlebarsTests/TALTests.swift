@@ -20,7 +20,7 @@ struct Test {
         <span tal:condition="p.active ? 'true' : ''">Active</span>
       </li>
       <p tal:condition="people ? true : false" tal:replace="'Total: '"/>
-      <strong tal:content="people.count">N</strong>
+      <strong tal:content="count">N</strong>
     </ul>
     """
         let ctx: [String: Any] = [
@@ -28,7 +28,7 @@ struct Test {
                 ["name": "Ada", "url": "https://example.com/ada", "active": true],
                 ["name": "Linus", "url": "https://example.com/linus", "active": false],
             ],
-            "people.count": 2
+            "count": 2
         ]
         let out = try engine.render(xml: xml, context: ctx)
         print(out)
