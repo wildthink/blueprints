@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//Users/jason/dev/workshop/Packages/blueprints/**)"
+      "Read(//Users/jason/dev/workshop/Packages/blueprints/**)",
+      "Read(//Users/jason/dev/workshop/**)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,44 @@
+    <main class="main">
+        <section class="page-header">
+            <div class="container">
+                <h1 tal:content="pricing.title">Simple, Transparent Pricing</h1>
+                <p class="lead" tal:content="pricing.subtitle">Choose the plan that's right for your community needs</p>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="container">
+                <div class="pricing-grid">
+                    <div class="pricing-card" tal:repeat="plan pricing.plans" tal:attributes="class plan.cssClass">
+                        <div class="pricing-header">
+                            <h3 class="pricing-title" tal:content="plan.name">Free</h3>
+                            <p class="pricing-subtitle" tal:content="plan.description">Perfect for getting started</p>
+                        </div>
+
+                        <div class="pricing-price">
+                            <span class="price-amount" tal:content="plan.price">$0</span>
+                            <span class="price-period" tal:content="plan.period">/month</span>
+                            <div class="price-description" tal:content="plan.priceDescription">Forever free</div>
+                        </div>
+
+                        <ul class="pricing-features">
+                            <li tal:repeat="feature plan.features" tal:attributes="class feature.cssClass">
+                                <span class="feature-check" tal:content="feature.icon">✓</span>
+                                <span tal:content="feature.text">Basic search functionality</span>
+                            </li>
+                        </ul>
+
+                        <div class="pricing-action">
+                            <a href="signup.html" class="btn btn-pricing" tal:attributes="href plan.actionUrl; class plan.buttonClass" tal:content="plan.actionText">Get Started</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight-box" style="margin-top: 4rem;">
+                    <h3 tal:content="pricing.guarantee.title">30-Day Money-Back Guarantee</h3>
+                    <p tal:content="pricing.guarantee.description">Try any paid plan risk-free. If you're not satisfied, we'll refund your money within 30 days.</p>
+                    <a href="#contact" class="btn" tal:content="pricing.guarantee.actionText">Contact Sales</a>
+                </div>
+            </div>
+        </section>
+    </main>

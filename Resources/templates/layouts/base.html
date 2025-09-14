@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal" tal:define="site_name site.name|default:'3rd Space'; current_year '2024'">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title tal:content="page.title|default:'3rd Space - Community Concierge'">3rd Space - Community Concierge</title>
+    <meta name="description" tal:attributes="content page.description|default:'Discover local people, places, companies, events, and services in your area'">
+
+    <!-- Conditional CSS loading -->
+    <link rel="stylesheet" href="/css/style.css">
+    <style tal:condition="page.customCSS" tal:content="page.customCSS|raw"></style>
+
+    <!-- SEO and Meta Tags -->
+    <meta name="keywords" tal:condition="page.keywords" tal:attributes="content page.keywords">
+    <meta property="og:title" tal:attributes="content page.title|default:site_name">
+    <meta property="og:description" tal:attributes="content page.description|default:'Community discovery platform'">
+    <meta property="og:type" content="website">
+
+    <!-- Page-specific head content -->
+    <tal:block tal:slot="head_extra"></tal:block>
+</head>
+<body tal:attributes="class page.bodyClass|default:''">
+
+    <!-- Header with dynamic navigation -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="/" tal:attributes="title site_name">
+                    <h1 tal:content="site_name">3rd Space</h1>
+                </a>
+            </div>
+
+            <!-- Navigation slot for customization -->
+            <div class="nav-links" tal:slot="navigation">
+                <a href="/about">About</a>
+                <a href="/login" class="btn btn-outline">Login</a>
+                <a href="/signup" class="btn btn-primary">Sign Up</a>
+            </div>
+        </nav>
+
+        <!-- Optional alert/notice bar -->
+        <div tal:condition="alerts" class="alert-bar" tal:repeat="alert alerts">
+            <div tal:attributes="class alert.type|default:'info'" tal:content="alert.message">Alert message</div>
+        </div>
+    </header>
+
+    <!-- Main content slot -->
+    <main class="main" tal:slot="content">
+        <p>Default content - this should be replaced by child templates</p>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <!-- Dynamic footer links -->
+                <div class="footer-links">
+                    <tal:block tal:repeat="link footer.links|default:[]">
+                        <a tal:attributes="href link.url" tal:content="link.text">Link</a>
+                    </tal:block>
+
+                    <!-- Fallback static links -->
+                    <tal:block tal:condition="not:footer.links">
+                        <a href="/about">About</a>
+                        <a href="/terms">Terms of Service</a>
+                        <a href="/privacy">Privacy Policy</a>
+                        <a href="/contact">Contact</a>
+                    </tal:block>
+                </div>
+
+                <div class="footer-copy">
+                    <p tal:content="footer.copyright|default:'© ${current_year} ${site_name}. All rights reserved.'|template">
+                        © 2024 3rd Space. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Page-specific scripts -->
+    <tal:block tal:slot="scripts"></tal:block>
+</body>
+</html>

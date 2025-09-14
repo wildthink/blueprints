@@ -1,0 +1,162 @@
+    <style>
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.2s ease;
+            aspect-ratio: 3/4;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .pricing-card.featured {
+            border-color: var(--primary);
+            position: relative;
+            transform: scale(1.05);
+        }
+
+        .pricing-card.featured::before {
+            content: 'Most Popular';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .pricing-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .pricing-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .pricing-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .pricing-price {
+            margin-bottom: 1.5rem;
+        }
+
+        .price-amount {
+            font-size: 3rem;
+            font-weight: 300;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .price-period {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-left: 0.5rem;
+        }
+
+        .price-description {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+            text-align: left;
+            flex-grow: 1;
+        }
+
+        .pricing-features li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+
+        .pricing-features li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-check {
+            color: var(--secondary);
+            margin-right: 0.75rem;
+            font-weight: 600;
+        }
+
+        .feature-unavailable {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .feature-unavailable .feature-check {
+            color: var(--text-secondary);
+        }
+
+        .pricing-action {
+            margin-top: 1rem;
+        }
+
+        .btn-pricing {
+            width: 100%;
+            justify-content: center;
+            padding: 1rem 2rem;
+            font-weight: 600;
+        }
+
+        .pricing-card.featured .btn-pricing {
+            background: var(--primary);
+            color: white;
+        }
+
+        @media (max-width: 900px) {
+            .pricing-grid {
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 1rem;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .pricing-card {
+                padding: 1.25rem;
+                aspect-ratio: auto;
+            }
+
+            .price-amount {
+                font-size: 2.5rem;
+            }
+        }
+    </style>

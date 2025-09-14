@@ -1,0 +1,126 @@
+{
+  "site": {
+    "name": "3rd Space",
+    "tagline": "Community Concierge",
+    "url": "https://3rdspace.com"
+  },
+  "page": {
+    "title": "Find Your Community - 3rd Space",
+    "description": "Discover local people, places, companies, events, and services in your area",
+    "keywords": "community, local, discovery, events, services",
+    "bodyClass": "homepage",
+    "customCSS": null
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "about": "About",
+    "pricing": "Pricing",
+    "login": "Login",
+    "signup": "Sign Up",
+    "showPricing": true
+  },
+  "hero": {
+    "title": "Find Your Community",
+    "subtitle": "Discover local people, places, companies, events, and services in your area"
+  },
+  "search": {
+    "placeholder": "Search for people, places, events, or services...",
+    "action": "/search",
+    "buttonLabel": "Search",
+    "suggestionsLabel": "Try searching for:",
+    "suggestions": [
+      {"text": "coffee shops", "query": "coffee"},
+      {"text": "yoga classes", "query": "yoga"},
+      {"text": "local events", "query": "events"},
+      {"text": "restaurants", "query": "food"}
+    ]
+  },
+  "features": {
+    "title": "What You'll Find",
+    "subtitle": "Everything your community has to offer",
+    "items": [
+      {
+        "id": "people",
+        "title": "People",
+        "description": "Connect with local community members and neighbors",
+        "icon": "👥",
+        "category": "social",
+        "cta": {
+          "text": "Meet People",
+          "url": "/people"
+        }
+      },
+      {
+        "id": "places",
+        "title": "Places",
+        "description": "Discover restaurants, shops, and local businesses",
+        "icon": "📍",
+        "category": "location"
+      },
+      {
+        "id": "events",
+        "title": "Events",
+        "description": "Find local events, meetups, and activities",
+        "icon": "🎉",
+        "category": "events",
+        "cta": {
+          "text": "Browse Events",
+          "url": "/events"
+        }
+      },
+      {
+        "id": "services",
+        "title": "Services",
+        "description": "Get help from local service providers",
+        "icon": "🔧",
+        "category": "services"
+      }
+    ]
+  },
+  "cta": {
+    "title": "Ready to Get Started?",
+    "subtitle": "Join your local community today and start discovering",
+    "primary": {
+      "text": "Join Now",
+      "url": "/signup"
+    },
+    "secondary": {
+      "text": "Explore First",
+      "url": "/search"
+    }
+  },
+  "footer": {
+    "links": [
+      {"text": "About", "url": "/about"},
+      {"text": "Terms of Service", "url": "/terms"},
+      {"text": "Privacy Policy", "url": "/privacy"},
+      {"text": "Contact", "url": "/contact"}
+    ],
+    "copyright": "© 2024 3rd Space. All rights reserved."
+  },
+  "alerts": [
+    {
+      "type": "info",
+      "message": "Welcome! We're currently in beta - your feedback is appreciated."
+    }
+  ],
+  "auth": {
+    "social": {
+      "enabled": true,
+      "providers": [
+        {
+          "key": "google",
+          "name": "Google",
+          "label": "Continue with Google",
+          "url": "/auth/google",
+          "icon": "<svg>...</svg>"
+        }
+      ]
+    }
+  },
+  "analytics": {
+    "enabled": false,
+    "code": "<script>/* analytics code */</script>"
+  }
+}

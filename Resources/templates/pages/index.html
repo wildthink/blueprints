@@ -1,0 +1,152 @@
+<!-- Enhanced Index Page with Template Inheritance -->
+<div xmlns:tal="http://xml.zope.org/namespaces/tal"
+     tal:extends="layouts/base.html"
+     tal:define="page_title 'Find Your Community'; hero_cta 'Start Exploring'">
+
+    <!-- Page-specific head content -->
+    <tal:block tal:slot="head_extra">
+        <link rel="preload" href="/images/hero-bg.jpg" as="image">
+        <script type="application/ld+json" tal:content="seo.structuredData|raw"></script>
+    </tal:block>
+
+    <!-- Custom navigation for home page -->
+    <div tal:slot="navigation" class="nav-links">
+        <a href="/search" tal:content="nav.search|default:'Search'">Search</a>
+        <a href="/about" tal:content="nav.about|default:'About'">About</a>
+        <a href="/pricing" tal:condition="nav.showPricing" tal:content="nav.pricing">Pricing</a>
+        <a href="/login" class="btn btn-outline" tal:content="nav.login|default:'Login'">Login</a>
+        <a href="/signup" class="btn btn-primary" tal:content="nav.signup|default:'Sign Up'">Sign Up</a>
+    </div>
+
+    <!-- Main content -->
+    <section tal:slot="content">
+        <!-- Hero Section -->
+        <section class="hero" tal:define="hero_title hero.title|default:page_title; hero_subtitle hero.subtitle|default:'Discover local people, places, companies, events, and services in your area'">
+            <div class="hero-content">
+                <h1 class="hero-title" tal:content="hero_title">Find Your Community</h1>
+                <p class="hero-subtitle" tal:content="hero_subtitle">Discover local community</p>
+
+                <!-- Enhanced Search Form -->
+                <div class="search-container">
+                    <form class="search-form" tal:attributes="action search.action|default:'/search'" method="GET">
+                        <div class="search-box">
+                            <input
+                                type="text"
+                                name="q"
+                                class="search-input"
+                                tal:attributes="
+                                    placeholder search.placeholder|default:'Search for people, places, events, or services...';
+                                    value request.query.q|default:'';
+                                    aria-label search.ariaLabel|default:'Search input'
+                                "
+                                required
+                            >
+                            <button type="submit" class="search-btn" tal:attributes="aria-label search.buttonLabel|default:'Search'">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                                <span class="sr-only" tal:content="search.buttonText|default:'Search'">Search</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Search Suggestions with Conditional Display -->
+                <div class="search-suggestions" tal:condition="search.suggestions">
+                    <p tal:content="search.suggestionsLabel|default:'Try searching for:'">Try searching for:</p>
+                    <div class="suggestion-tags">
+                        <tal:block tal:repeat="tag search.suggestions">
+                            <button
+                                type="button"
+                                class="tag suggestion-tag"
+                                tal:content="tag.text|default:tag"
+                                tal:attributes="data-search tag.query|default:tag.text|default:tag"
+                                onclick="document.querySelector('.search-input').value = this.dataset.search;"
+                            >coffee shops</button>
+                        </tal:block>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section with Enhanced Data Structure -->
+        <section class="features" tal:condition="features">
+            <div class="container">
+                <h2 tal:content="features.title|default:'What You\'ll Find'">What You'll Find</h2>
+                <p tal:condition="features.subtitle" tal:content="features.subtitle" class="section-subtitle"></p>
+
+                <div class="feature-grid" tal:define="grid_class features.gridClass|default:'feature-grid'">
+                    <tal:block tal:repeat="feature features.items|default:features">
+                        <article
+                            class="feature-card"
+                            tal:attributes="
+                                class feature.cssClass|default:'feature-card';
+                                data-category feature.category|default:'';
+                                id feature.id|default:''
+                            "
+                        >
+                            <!-- Feature Icon with Conditional Rendering -->
+                            <div class="feature-icon" tal:condition="feature.icon">
+                                <!-- Raw HTML icon or emoji -->
+                                <tal:block tal:condition="feature.icon.html" tal:content="feature.icon.html|raw"></tal:block>
+                                <!-- Simple emoji or text -->
+                                <tal:block tal:condition="not:feature.icon.html" tal:content="feature.icon|default:'🔍'"></tal:block>
+                            </div>
+
+                            <h3 tal:content="feature.title|capitalize">Feature Title</h3>
+                            <p tal:content="feature.description">Feature description</p>
+
+                            <!-- Optional CTA for each feature -->
+                            <a tal:condition="feature.cta"
+                               tal:attributes="href feature.cta.url"
+                               class="feature-cta"
+                               tal:content="feature.cta.text">Learn More</a>
+                        </article>
+                    </tal:block>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call-to-Action Section -->
+        <section class="cta-section" tal:condition="cta">
+            <div class="container">
+                <div class="cta-content">
+                    <h2 tal:content="cta.title|default:'Ready to Get Started?'">Ready to Get Started?</h2>
+                    <p tal:content="cta.subtitle">Join your local community today</p>
+                    <div class="cta-buttons">
+                        <a href="/signup"
+                           class="btn btn-primary btn-large"
+                           tal:attributes="href cta.primary.url|default:'/signup'"
+                           tal:content="cta.primary.text|default:'Join Now'">Join Now</a>
+                        <a href="/search"
+                           class="btn btn-outline btn-large"
+                           tal:condition="cta.secondary"
+                           tal:attributes="href cta.secondary.url|default:'/search'"
+                           tal:content="cta.secondary.text|default:'Explore First'">Explore First</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </section>
+
+    <!-- Page-specific JavaScript -->
+    <tal:block tal:slot="scripts">
+        <script>
+            // Search suggestions click handler
+            document.addEventListener('DOMContentLoaded', function() {
+                const suggestions = document.querySelectorAll('.suggestion-tag');
+                const searchInput = document.querySelector('.search-input');
+
+                suggestions.forEach(tag => {
+                    tag.addEventListener('click', () => {
+                        searchInput.value = tag.dataset.search;
+                        searchInput.focus();
+                    });
+                });
+            });
+        </script>
+        <script tal:condition="analytics.enabled" tal:content="analytics.code|raw"></script>
+    </tal:block>
+
+</div>

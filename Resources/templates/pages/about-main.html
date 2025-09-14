@@ -1,0 +1,59 @@
+    <main class="main">
+        <section class="page-header">
+            <div class="container">
+                <h1 tal:content="content.title">About 3rd Space</h1>
+                <p class="lead" tal:content="content.subtitle">Connecting communities, one connection at a time</p>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="container">
+                <div class="content-grid">
+                    <div class="content-main">
+                        <div class="prose">
+                            <h2 tal:content="content.mission.title">Our Mission</h2>
+                            <p tal:content="content.mission.description">We believe that strong communities are built on meaningful connections between people, places, and shared experiences.</p>
+
+                            <h2 tal:content="content.vision.title">What We Do</h2>
+                            <p tal:content="content.vision.description">3rd Space serves as your community concierge, making it effortless to discover and connect with the people, businesses, events, and services that matter most in your local area.</p>
+
+                            <h3>How It Works</h3>
+                            <div class="feature-list">
+                                <div class="feature-item" tal:repeat="step content.steps">
+                                    <div class="feature-number" tal:content="step.number">1</div>
+                                    <div class="feature-content">
+                                        <h4 tal:content="step.title">Search & Discover</h4>
+                                        <p tal:content="step.description">Use our intelligent search to find exactly what you're looking for</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h2 tal:content="content.community.title">Community First</h2>
+                            <p tal:content="content.community.description">Unlike traditional search engines that point you to websites, 3rd Space presents rich, interconnected cards that show the relationships between people, places, and events in your community.</p>
+
+                            <div class="highlight-box">
+                                <h3 tal:content="content.membership.title">Free Membership</h3>
+                                <p tal:content="content.membership.description">Join our community for free and start discovering the connections that will enrich your local experience.</p>
+                                <a href="signup.html" class="btn btn-primary">Get Started</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-sidebar">
+                        <div class="sidebar-card">
+                            <h3>Quick Facts</h3>
+                            <ul class="fact-list">
+                                <li tal:repeat="fact content.facts" tal:content="fact">Connecting communities since 2024</li>
+                            </ul>
+                        </div>
+
+                        <div class="sidebar-card">
+                            <h3>Get in Touch</h3>
+                            <p>Have questions or feedback?</p>
+                            <a href="mailto:hello@3rdspace.com" class="btn btn-outline btn-small">Contact Us</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>

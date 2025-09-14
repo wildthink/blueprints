@@ -25,7 +25,7 @@ public struct DocumentTree {
 public typealias MimeType = String
 
 public extension DocumentTree {
-    
+
     init (xmlDocument: XMLDocument) throws {
         guard let rootEl = xmlDocument.rootElement(),
             let rootNode = rootEl.toDTFNode() as? DTFNode
@@ -36,10 +36,69 @@ public extension DocumentTree {
         self.attributes = rootNode.attributes
         self.root = rootNode
     }
-    
+
     init (xml: String) throws {
         let doc = try XMLDocument(xmlString: xml, options: [.nodePreserveAll, .nodeCompactEmptyElement])
         try self.init(xmlDocument: doc)
+    }
+
+    /// Converts the DocumentTree back to an XMLDocument for pretty-printing or further processing
+    func toXMLDocument(prettyPrint: Bool = true) -> XMLDocument {
+        let xmlDoc = XMLDocument()
+        if let rootElement = dtfNodeToXMLElement(self.root) {
+            xmlDoc.setRootElement(rootElement)
+        }
+
+        if prettyPrint {
+            xmlDoc.characterEncoding = "UTF-8"
+            xmlDoc.isStandalone = true
+        }
+
+        return xmlDoc
+    }
+
+    /// Converts the DocumentTree to a pretty-printed XML string
+    func toPrettyXML() -> String {
+        let xmlDoc = toXMLDocument(prettyPrint: true)
+        return xmlDoc.xmlString(options: [.nodePrettyPrint, .nodeCompactEmptyElement])
+    }
+
+    /// Converts the DocumentTree to a compact XML string
+    func toXML() -> String {
+        let xmlDoc = toXMLDocument(prettyPrint: false)
+        return xmlDoc.xmlString(options: [.nodeCompactEmptyElement])
+    }
+}
+
+private extension DocumentTree {
+    /// Recursively converts a DTFNode back to an XMLElement
+    func dtfNodeToXMLElement(_ node: any AnyDTFNode) -> XMLElement? {
+        if let dtfNode = node as? DTFNode {
+            let element = XMLElement(name: dtfNode.qname.name)
+
+            // Set namespace if present
+            if let ns = dtfNode.qname.ns {
+                element.addNamespace(XMLNode.namespace(withName: ns, stringValue: "http://xml.zope.org/namespaces/\(ns)") as! XMLNode)
+            }
+
+            // Add attributes
+            for attr in dtfNode.attributes {
+                let xmlAttr = XMLNode.attribute(withName: attr.qname.description, stringValue: attr.value) as! XMLNode
+                element.addAttribute(xmlAttr)
+            }
+
+            // Add children
+            for child in dtfNode.children {
+                if let childElement = dtfNodeToXMLElement(child) {
+                    element.addChild(childElement)
+                } else if let textNode = child as? DTFValue, textNode.qname.name == "text" {
+                    element.addChild(XMLNode.text(withStringValue: textNode.value) as! XMLNode)
+                }
+            }
+
+            return element
+        }
+        return nil
     }
 }
 
@@ -140,11 +199,14 @@ public struct DTFNode: AnyDTFNode {
     mutating func removeAttribute(named: String) {
         guard let ndx = attributes.firstIndex(where: { $0.qname == named })
         else { return }
+//        attributes.removeAll { DTFValue in
+//            <#code#>
+//        }
         attributes.remove(at: ndx)
     }
 
-    func replace(attribute: DTFValue, with newValue: DTFValue) {
-        let ndx = attributes.firstIndex(of: attribute)
+    mutating func replace(attribute: DTFValue, with newValue: DTFValue) {
+        attributes.replace([attribute], with: [newValue])
     }
 }
 
