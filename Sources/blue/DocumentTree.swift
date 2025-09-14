@@ -28,9 +28,9 @@ public extension DocumentTree {
     
     init (xmlDocument: XMLDocument) throws {
         guard let rootEl = xmlDocument.rootElement(),
-            let rootNode = rootEl.toDTFNode()
+            let rootNode = rootEl.toDTFNode() as? DTFNode
         else {
-            throw DTFError(message: "XMLDocument has no root element")
+            throw DTFError(message: "XMLDocument has no root element or root is not an element")
         }
         self.qname = rootNode.qname
         self.attributes = rootNode.attributes
@@ -106,6 +106,13 @@ public struct DTFValue: AnyDTFNode, Equatable {
     public typealias Value = String
     public var qname: QName
     public var value: Value
+    public var shouldEscape: Bool
+
+    public init(qname: QName, value: Value, shouldEscape: Bool = true) {
+        self.qname = qname
+        self.value = value
+        self.shouldEscape = shouldEscape
+    }
 }
 
 extension DTFValue {
@@ -150,12 +157,20 @@ extension QName {
 
 private extension XMLNode {
     @_disfavoredOverload
-    func toDTFNode() -> DTFNode? {
-        guard let name = self.name else { return Optional<DTFNode>.none }
+    func toDTFNode() -> (any AnyDTFNode)? {
+        // Handle text nodes
+        if self.kind == .text {
+            guard let textValue = self.stringValue?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !textValue.isEmpty else { return nil }
+            return DTFValue(qname: QName(name: "text"), value: textValue, shouldEscape: true)
+        }
+
+        // Handle element nodes
+        guard let name = self.name else { return nil }
         let qname = QName(name: name)
-    
+
         let attrs = (self as? XMLElement)?.attributes?.compactMap { attr in
-            return DTFValue(qname: QName(attr), value: attr.stringValue ?? "")
+            return DTFValue(qname: QName(attr), value: attr.stringValue ?? "", shouldEscape: true)
         }
         let kids = self.children?.compactMap { $0.toDTFNode() }
         return DTFNode(tag: qname, attributes: attrs, children: kids)

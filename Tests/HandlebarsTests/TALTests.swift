@@ -11,6 +11,10 @@ import Foundation
 
 struct Test {
     
+    @Test func testPipes() {
+        testPipeModifiers()
+    }
+    
     @Test  func testTALExample() throws {
         let engine = TALEngineXML()
         let xml = """
@@ -34,7 +38,7 @@ struct Test {
         print(out)
     }
 
-    @Test func testTALEngine() {
+    @Test func testTALEngine_1() {
         do {
             let engine = TALEngineXML()
             
@@ -49,6 +53,15 @@ struct Test {
             print("Test 1 - tal:content:")
             print(result1)
             print("")
+            
+        } catch {
+            print("Error: \(error)")
+        }
+    }
+
+    @Test func testTALEngine_2() {
+        do {
+            let engine = TALEngineXML()
             
             // Test tal:condition
             let xml2 = """

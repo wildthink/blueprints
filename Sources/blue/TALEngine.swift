@@ -4,25 +4,63 @@
 // https://en.wikipedia.org/wiki/Template_Attribute_Language
 import Foundation
 
+// MARK: - Output Modifiers
+
+public enum OutputModifier: String, CaseIterable {
+    case raw = "raw"           // No HTML escaping
+    case upper = "upper"       // Uppercase
+    case lower = "lower"       // Lowercase
+    case trim = "trim"         // Trim whitespace
+    case capitalize = "capitalize" // Capitalize first letter
+
+    func apply(to value: String) -> String {
+        switch self {
+        case .raw: return value          // No transformation, just flag for no escaping
+        case .upper: return value.uppercased()
+        case .lower: return value.lowercased()
+        case .trim: return value.trimmingCharacters(in: .whitespacesAndNewlines)
+        case .capitalize: return value.capitalized
+        }
+    }
+}
+
 // MARK: - Context
 
 public struct TALValue {
     public let raw: Any?
+    public let modifiers: [OutputModifier]
+
+    public init(raw: Any?, modifiers: [OutputModifier] = []) {
+        self.raw = raw
+        self.modifiers = modifiers
+    }
+
     public var bool: Bool {
         if let b = raw as? Bool { return b }
         if let n = raw as? NSNumber { return n != 0 }
         if let s = raw as? String { return !s.isEmpty && s.lowercased() != "false" && s != "0" }
         return raw != nil
     }
+
     public var string: String {
+        let baseString: String
         switch raw {
-            case nil: return ""
-            case let s as String: return s
-            case let n as NSNumber: return n.stringValue
-            case let a as [Any]: return a.map { TALValue(raw: $0).string }.joined(separator: ",")
-            case let d as Date: return ISO8601DateFormatter().string(from: d)
-            default: return String(describing: raw!)
+            case nil: baseString = ""
+            case let s as String: baseString = s
+            case let n as NSNumber: baseString = n.stringValue
+            case let a as [Any]: baseString = a.map { TALValue(raw: $0).string }.joined(separator: ",")
+            case let d as Date: baseString = ISO8601DateFormatter().string(from: d)
+            default: baseString = String(describing: raw!)
         }
+
+        // Apply modifiers in sequence
+        return modifiers.reduce(baseString) { result, modifier in
+            modifier.apply(to: result)
+        }
+    }
+
+    public var shouldEscape: Bool {
+        !modifiers.contains(.raw)
     }
 }
 
@@ -32,6 +70,20 @@ public final class TALContext {
     public func push(_ dict: [String: Any]) { stack.append(dict) }
     public func pop() { _ = stack.popLast() }
     public subscript(_ keyPath: String) -> TALValue { TALValue(raw: resolve(keyPath)) }
+
+    /// Evaluates an expression with pipe modifiers: "variable|modifier1|modifier2"
+    public func evaluate(_ expression: String) -> TALValue {
+        let parts = expression.split(separator: "|").map(String.init)
+        guard !parts.isEmpty else { return TALValue(raw: nil) }
+
+        let variablePath = parts[0].trimmingCharacters(in: .whitespaces)
+        let modifierStrings = parts.dropFirst().map { $0.trimmingCharacters(in: .whitespaces) }
+
+        let modifiers = modifierStrings.compactMap { OutputModifier(rawValue: $0) }
+
+        let rawValue = resolve(variablePath)
+        return TALValue(raw: rawValue, modifiers: modifiers)
+    }
     
     private func resolve(_ keyPath: String) -> Any? {
         let parts = keyPath.split(separator: ".").map(String.init)
@@ -74,11 +126,11 @@ public enum TALAttr: String {
     /// applied on a given Node (higher number = higher precedence)
     public var rank: Int {
         switch self {
-            case .condition: 4  // Highest precedence - can remove element
-            case .repeat_: 3    // Second - can create multiple elements
-            case .replace: 2    // Third - replaces entire element
-            case .attributes: 1 // Fourth - modifies attributes
-            case .content: 0    // Lowest - modifies content
+            case .condition: return 4  // Highest precedence - can remove element
+            case .repeat_: return 3    // Second - can create multiple elements
+            case .replace: return 2    // Third - replaces entire element
+            case .attributes: return 1 // Fourth - modifies attributes
+            case .content: return 0    // Lowest - modifies content
         }
     }
     
@@ -87,9 +139,16 @@ public enum TALAttr: String {
         switch qn.name.lowercased() {
             case "content": self = .content
             case "replace": self = .replace
+            case "condition": self = .condition
             case "repeat": self = .repeat_
             case "attributes": self = .attributes
-            default: return nil
+            default:
+                // Check for tal:_attributeName pattern
+                if qn.name.hasPrefix("_") && qn.name.count > 1 {
+                    self = .attributes
+                } else {
+                    return nil
+                }
         }
     }
 }
@@ -99,15 +158,15 @@ public struct TALDirective {
     var tag: TALAttr
     /// An array of all the tokens of the Node's attribute (trimmed and cleaned)
     var argv: [String]
-    /// The full expression as a single string (for convenience)
-//    var expression: String
+    /// For tal:_attributeName pattern, stores the target attribute name
+    var targetAttribute: String?
     var rank: Int { tag.rank }
 
     subscript(ndx: Int) -> String {
         guard ndx < argv.count else { return "" }
         return argv[ndx]
     }
-    
+
     init(_ tag: TALAttr, argv: Any...) {
         self.tag = tag
         self.argv = argv.map(String.init(describing:))
@@ -117,18 +176,22 @@ public struct TALDirective {
         self.tag = tag
         self.argv = argv
     }
-    
+
     init?(_ kv: DTFValue) {
         guard let attr = TALAttr(kv.qname)
         else { return nil }
         tag = attr
+
+        // Check if this is a tal:_attributeName pattern
+        if kv.qname.name.hasPrefix("_") && kv.qname.name.count > 1 {
+            targetAttribute = String(kv.qname.name.dropFirst()) // Remove the "_" prefix
+        }
 
         // Clean up the value and split into arguments
         let cleanValue = kv.value.trimmingCharacters(in: .whitespacesAndNewlines)
         argv = cleanValue.split(separator: " ").map {
             String($0).trimmingCharacters(in: .whitespacesAndNewlines)
         }
-//        expression = cleanValue
     }
 }
 
@@ -171,7 +234,7 @@ public final class TALEngineXML {
             case .replace:
                 // tal:replace - replaces entire element
                 let result = evaluateExpression(directive, ctx: ctx)
-                return DTFValue(qname: QName(name: "text"), value: result.string)
+                return DTFValue(qname: QName(name: "text"), value: result.string, shouldEscape: result.shouldEscape)
 
             case .attributes:
                 // tal:attributes - modifies attributes
@@ -181,7 +244,7 @@ public final class TALEngineXML {
                 // tal:content - replaces element content
                 let result = evaluateExpression(directive, ctx: ctx)
                 node = DTFNode(tag: node.qname, attributes: node.attributes,
-                              children: [DTFValue(qname: QName(name: "text"), value: result.string)])
+                              children: [DTFValue(qname: QName(name: "text"), value: result.string, shouldEscape: result.shouldEscape)])
             }
         }
 
@@ -218,33 +281,83 @@ public final class TALEngineXML {
         return DTFNode(tag: QName(name: "repeat-container"), attributes: [], children: results)
     }
 
-    /// Attribute Subsitution example
-    /// tal:_src="lookup_value" -> src="the_value"
-
+    /// Attribute Substitution
+    /// tal:_src="baseURL" -> src="https://example.com"
+    /// tal:attributes="href p.url; title p.name" -> href="..." title="..."
     private func processAttributes(
         node: DTFNode,
         directive: TALDirective,
         ctx: TALContext
     ) -> DTFNode {
-        print("FIXME", #function)
-        return node
-//        return DTFNode(tag: node.qname, attributes: newAttributes, children: node.children)
+        var newAttributes = node.attributes.filter { $0.qname.ns != "tal" }
+
+        if let targetAttr = directive.targetAttribute {
+            // Handle tal:_attributeName="expression" pattern
+            let result = evaluateExpression(directive, ctx: ctx)
+            newAttributes.append(DTFValue(qname: QName(name: targetAttr), value: result.string, shouldEscape: result.shouldEscape))
+        } else {
+            // Handle tal:attributes="attr expr; attr expr" pattern
+            let expression = directive.argv.joined(separator: " ")
+            let assignments = expression.split(separator: ";")
+            for assignment in assignments {
+                let parts = assignment.split(separator: " ", maxSplits: 1)
+                guard parts.count == 2 else { continue }
+
+                let attrName = String(parts[0]).trimmingCharacters(in: .whitespaces)
+                let expr = String(parts[1]).trimmingCharacters(in: .whitespaces)
+                let value = evaluateExpression(expr, ctx: ctx)
+
+                newAttributes.append(DTFValue(qname: QName(name: attrName), value: value.string, shouldEscape: value.shouldEscape))
+            }
+        }
+
+        return DTFNode(tag: node.qname, attributes: newAttributes, children: node.children)
     }
 
-    private func evaluateExpression(_ expr: TALDirective, ctx: TALContext) -> TALValue {
-        let value = ctx[expr[0]]
-        print("Evaluating: \(expr) -> \(value)")
-        return value
+    private func evaluateExpression(_ expr: String, ctx: TALContext) -> TALValue {
+        // Handle ternary operator: "expr ? true_val : false_val"
+        if expr.contains("?") && expr.contains(":") {
+            return evaluateTernary(expr, ctx: ctx)
+        }
+
+        // Use new pipe-aware evaluation
+        return ctx.evaluate(expr.trimmingCharacters(in: .whitespaces))
+    }
+
+    private func evaluateTernary(_ expr: String, ctx: TALContext) -> TALValue {
+        let parts = expr.split(separator: "?", maxSplits: 1)
+        guard parts.count == 2 else { return ctx.evaluate(expr) }
+
+        let condition = String(parts[0]).trimmingCharacters(in: .whitespaces)
+        let rest = String(parts[1])
+
+        let valueParts = rest.split(separator: ":", maxSplits: 1)
+        guard valueParts.count == 2 else { return ctx.evaluate(expr) }
+
+        let trueVal = String(valueParts[0]).trimmingCharacters(in: .whitespacesAndNewlines)
+        let falseVal = String(valueParts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let condResult = ctx[condition] // Simple lookup for condition (no modifiers needed for bool check)
+        let resultExpr = condResult.bool ? trueVal : falseVal
+
+        // Remove quotes if present and evaluate with pipe modifiers
+        let cleanResult = resultExpr.trimmingCharacters(in: CharacterSet(charactersIn: "'\""))
+        return ctx.evaluate(cleanResult)
+    }
+
+    private func evaluateExpression(_ directive: TALDirective, ctx: TALContext) -> TALValue {
+        let expr = directive.argv.joined(separator: " ")
+        return evaluateExpression(expr, ctx: ctx)
     }
 
     private func serialize(elem: Element) -> String {
         if let dtfValue = elem as? DTFValue {
-            // This is a text node - don't escape if it's already escaped content
+            // This is a text node or attribute - respect the shouldEscape flag
             if dtfValue.qname.name == "text" {
-                return dtfValue.value.escape()
+                return dtfValue.shouldEscape ? dtfValue.value.escape() : dtfValue.value
             } else {
-                // This is an attribute value, already handled elsewhere
-                return dtfValue.value
+                // This is an attribute value, always escape for safety in attributes
+                return dtfValue.shouldEscape ? dtfValue.value.escape() : dtfValue.value
             }
         }
 
@@ -261,7 +374,7 @@ public final class TALEngineXML {
         // Add attributes (excluding TAL attributes)
         for attr in dtfNode.attributes where attr.qname.ns != "tal" {
             let attrName = attr.qname.description
-            let attrValue = attr.value.escape()
+            let attrValue = attr.shouldEscape ? attr.value.escape() : attr.value
             result += " \(attrName)=\"\(attrValue)\""
         }
 
