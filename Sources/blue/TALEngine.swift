@@ -845,10 +845,10 @@ public final class TALEngineXML {
         }
 
         // If pretty printing is enabled, use DocumentTree conversion
-        if prettyPrint {
-            let tempTree = DocumentTree(qname: dtfNode.qname, namespace: nil, attributes: dtfNode.attributes, root: dtfNode)
-            return tempTree.prettyPrint()
-        }
+//        if prettyPrint {
+//            let tempTree = DocumentTree(qname: dtfNode.qname, namespace: nil, attributes: dtfNode.attributes, root: dtfNode)
+//            return tempTree.prettyPrint()
+//        }
 
         let tagName = dtfNode.qname.name
         var result = "<\(tagName)"
