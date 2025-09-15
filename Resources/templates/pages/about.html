@@ -1,4 +1,4 @@
-    <main class="main">
+    <main class="main" xmlns:tal="http://xml.zope.org/namespaces/tal">
         <section class="page-header">
             <div class="container">
                 <h1 tal:content="content.title">About 3rd Space</h1>
@@ -22,7 +22,7 @@
                                 <div class="feature-item" tal:repeat="step content.steps">
                                     <div class="feature-number" tal:content="step.number">1</div>
                                     <div class="feature-content">
-                                        <h4 tal:content="step.title">Search & Discover</h4>
+                                        <h4 tal:content="step.title">Search &amp; Discover</h4>
                                         <p tal:content="step.description">Use our intelligent search to find exactly what you're looking for</p>
                                     </div>
                                 </div>

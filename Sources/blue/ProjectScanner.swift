@@ -23,9 +23,9 @@ public struct ProjectScanner {
 
         let config = SiteConfig(
             name: siteName,
-            templatesPath: templatesDir.path,
-            outputPath: outputDir.path,
-            assetsPath: assetsDir.path
+            templatesPath: "Resources/templates",
+            outputPath: "deploy",
+            assetsPath: "Resources/assets"
         )
 
         let builder = SiteBuilder(config: config)

@@ -1,7 +1,7 @@
-<!-- Enhanced Login Page with Template Inheritance -->
+<!-- Login Page with Template Inheritance -->
 <div xmlns:tal="http://xml.zope.org/namespaces/tal"
      tal:extends="layouts/base.html"
-     tal:define="page_title 'Welcome Back'; form_errors form.errors|default:[]">
+     tal:define="page_title 'Welcome Back'">
 
     <!-- Page-specific navigation -->
     <div tal:slot="navigation" class="nav-links">
@@ -16,188 +16,69 @@
             <div class="container">
                 <div class="auth-container">
                     <div class="auth-card">
-                        <!-- Header with conditional messaging -->
                         <div class="auth-header">
                             <h1 tal:content="content.title|default:'Welcome Back'">Welcome Back</h1>
-                            <p tal:content="content.subtitle|default:'Sign in to your 3rd Space account'">Sign in to your account</p>
-
-                            <!-- Success/Error Messages -->
-                            <div tal:condition="messages" class="message-container">
-                                <tal:block tal:repeat="message messages">
-                                    <div tal:attributes="class message.type|default:'info'" class="message">
-                                        <span tal:content="message.text">Message</span>
-                                        <button type="button" class="message-close" aria-label="Close">&times;</button>
-                                    </div>
-                                </tal:block>
-                            </div>
+                            <p tal:content="content.subtitle|default:'Sign in to your 3rd Space account'">Sign in to your 3rd Space account</p>
                         </div>
 
-                        <!-- Enhanced Login Form -->
-                        <form class="auth-form" tal:attributes="action form.action|default:'/login'" method="POST"
-                              tal:define="email_value form.fields.email.value|default:request.form.email|default:''">
-
-                            <!-- Email Field with Error Handling -->
-                            <div class="form-group" tal:define="email_error form.errors.email|default:''">
-                                <label for="email" tal:content="form.email.label|default:'Email Address'">Email Address</label>
+                        <form class="auth-form" action="/login" method="POST">
+                            <div class="form-group">
+                                <label for="email" tal:content="form.email.label">Email Address</label>
                                 <input
                                     type="email"
                                     id="email"
                                     name="email"
-                                    tal:attributes="
-                                        placeholder form.email.placeholder|default:'Enter your email';
-                                        value email_value;
-                                        class email_error ? 'error' : '';
-                                        aria-describedby email_error ? 'email-error' : '';
-                                        aria-invalid email_error ? 'true' : 'false'
-                                    "
+                                    tal:attributes="placeholder form.email.placeholder"
                                     required
                                 >
-                                <div tal:condition="email_error" id="email-error" class="field-error" tal:content="email_error">
-                                    Email error message
-                                </div>
                             </div>
 
-                            <!-- Password Field with Error Handling -->
-                            <div class="form-group" tal:define="password_error form.errors.password|default:''">
-                                <label for="password" tal:content="form.password.label|default:'Password'">Password</label>
-                                <div class="password-input-container">
-                                    <input
-                                        type="password"
-                                        id="password"
-                                        name="password"
-                                        tal:attributes="
-                                            placeholder form.password.placeholder|default:'Enter your password';
-                                            class password_error ? 'error' : '';
-                                            aria-describedby password_error ? 'password-error' : '';
-                                            aria-invalid password_error ? 'true' : 'false'
-                                        "
-                                        required
-                                    >
-                                    <button type="button" class="password-toggle" aria-label="Toggle password visibility">
-                                        <span class="password-toggle-icon">👁</span>
-                                    </button>
-                                </div>
-                                <div tal:condition="password_error" id="password-error" class="field-error" tal:content="password_error">
-                                    Password error message
-                                </div>
+                            <div class="form-group">
+                                <label for="password" tal:content="form.password.label">Password</label>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    tal:attributes="placeholder form.password.placeholder"
+                                    required
+                                >
                             </div>
 
-                            <!-- Form Options -->
                             <div class="form-options">
-                                <label class="checkbox-label" tal:condition="form.remember.enabled|default:true">
-                                    <input type="checkbox" name="remember_me" tal:attributes="checked form.remember.checked ? 'checked' : null">
-                                    <span tal:content="form.remember.label|default:'Remember me'">Remember me</span>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="remember_me">
+                                    <span tal:content="form.remember.label">Remember me</span>
                                 </label>
-                                <a href="/forgot-password" class="forgot-link" tal:content="form.forgot.text|default:'Forgot password?'">Forgot password?</a>
+                                <a href="#forgot" class="forgot-link" tal:content="form.forgot.text">Forgot password?</a>
                             </div>
 
-                            <!-- Submit Button with Loading State -->
-                            <button
-                                type="submit"
-                                class="btn btn-primary btn-full"
-                                tal:attributes="
-                                    disabled form.submitting ? 'disabled' : null;
-                                    data-loading-text form.loadingText|default:'Signing in...'
-                                "
-                                tal:content="form.submit.text|default:'Sign In'"
-                            >Sign In</button>
-
-                            <!-- CSRF Token -->
-                            <input tal:condition="csrf_token" type="hidden" name="_token" tal:attributes="value csrf_token">
+                            <button type="submit" class="btn btn-primary btn-full" tal:content="form.submit.text">Sign In</button>
                         </form>
 
-                        <!-- Social Login Section -->
-                        <div tal:condition="auth.social.enabled" class="social-section">
-                            <div class="auth-divider">
-                                <span tal:content="content.divider|default:'or'">or</span>
-                            </div>
-
-                            <div class="social-login">
-                                <tal:block tal:repeat="provider auth.social.providers|default:[]">
-                                    <button
-                                        type="button"
-                                        class="btn btn-outline btn-full social-btn"
-                                        tal:attributes="
-                                            data-provider provider.key;
-                                            data-url provider.url
-                                        "
-                                        onclick="window.location.href = this.dataset.url"
-                                    >
-                                        <span tal:content="provider.icon|raw" class="social-icon"></span>
-                                        <span tal:content="provider.label|template:'Continue with ${provider.name}'">Continue with Provider</span>
-                                    </button>
-                                </tal:block>
-
-                                <!-- Fallback Google button -->
-                                <tal:block tal:condition="not:auth.social.providers">
-                                    <button class="btn btn-outline btn-full social-btn" onclick="window.location.href='/auth/google'">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" class="social-icon">
-                                            <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                            <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                            <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                                            <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                                        </svg>
-                                        Continue with Google
-                                    </button>
-                                </tal:block>
-                            </div>
+                        <div class="auth-divider">
+                            <span tal:content="content.divider">or</span>
                         </div>
 
-                        <!-- Footer Links -->
+                        <div class="social-login" tal:condition="content.social_enabled">
+                            <button class="btn btn-outline btn-full social-btn">
+                                <svg width="18" height="18" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                </svg>
+                                Continue with Google
+                            </button>
+                        </div>
+
                         <div class="auth-footer">
-                            <p tal:content="content.signup_prompt|default:'Don\'t have an account?'">Don't have an account?</p>
-                            <a href="/signup" class="signup-link" tal:content="content.signup_link|default:'Sign up here'">Sign up here</a>
+                            <p tal:content="content.signup_prompt">Don't have an account?</p>
+                            <a href="signup.html" class="signup-link" tal:content="content.signup_link">Sign up here</a>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
     </section>
-
-    <!-- Page-specific JavaScript -->
-    <tal:block tal:slot="scripts">
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Password toggle functionality
-                const passwordToggle = document.querySelector('.password-toggle');
-                const passwordInput = document.querySelector('#password');
-
-                if (passwordToggle && passwordInput) {
-                    passwordToggle.addEventListener('click', function() {
-                        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                        passwordInput.setAttribute('type', type);
-                        this.querySelector('.password-toggle-icon').textContent = type === 'password' ? '👁' : '🙈';
-                    });
-                }
-
-                // Form submission loading state
-                const form = document.querySelector('.auth-form');
-                const submitBtn = form?.querySelector('button[type="submit"]');
-
-                if (form && submitBtn) {
-                    form.addEventListener('submit', function() {
-                        const loadingText = submitBtn.dataset.loadingText || 'Loading...';
-                        const originalText = submitBtn.textContent;
-
-                        submitBtn.disabled = true;
-                        submitBtn.textContent = loadingText;
-
-                        // Reset if form fails to submit (fallback)
-                        setTimeout(() => {
-                            submitBtn.disabled = false;
-                            submitBtn.textContent = originalText;
-                        }, 5000);
-                    });
-                }
-
-                // Auto-dismiss messages
-                document.querySelectorAll('.message-close').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        this.parentElement.style.display = 'none';
-                    });
-                });
-            });
-        </script>
-    </tal:block>
 
 </div>

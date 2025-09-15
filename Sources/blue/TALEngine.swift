@@ -328,20 +328,40 @@ public final class TALEngineXML {
     }
 
     public func render(xml: String, context: [String: Any]) throws -> String {
-        let tree = try DocumentTree(xml: xml)
-        let ctx = TALContext(context)
-        let processed = try process(elem: tree.root, ctx: ctx) // may return nil if removed by condition
-        guard let out = processed else { return "" }
-        return serialize(elem: out)
+        do {
+            let tree = try DocumentTree(xml: xml)
+            let ctx = TALContext(context)
+            let processed = try process(elem: tree.root, ctx: ctx) // may return nil if removed by condition
+            guard let out = processed else { return "" }
+            return serialize(elem: out)
+        } catch {
+            // If XML parsing fails, output the raw content with a debug comment
+            print("⚠️  XML parsing failed, outputting raw content: \(error)")
+            return """
+            <!-- XML Parsing Error: \(error) -->
+            <!-- Raw content follows: -->
+            \(xml)
+            """
+        }
     }
 
     /// Async render with full modifier support
     public func renderAsync(xml: String, context: [String: Any]) async throws -> String {
-        let tree = try DocumentTree(xml: xml)
-        let ctx = TALContext(context)
-        let processed = try await processAsync(elem: tree.root, ctx: ctx)
-        guard let out = processed else { return "" }
-        return serialize(elem: out)
+        do {
+            let tree = try DocumentTree(xml: xml)
+            let ctx = TALContext(context)
+            let processed = try await processAsync(elem: tree.root, ctx: ctx)
+            guard let out = processed else { return "" }
+            return serialize(elem: out)
+        } catch {
+            // If XML parsing fails, output the raw content with a debug comment
+            print("⚠️  XML parsing failed, outputting raw content: \(error)")
+            return """
+            <!-- XML Parsing Error: \(error) -->
+            <!-- Raw content follows: -->
+            \(xml)
+            """
+        }
     }
 
     /// Render with template inheritance support
@@ -349,6 +369,7 @@ public final class TALEngineXML {
         guard let templateContent = templateResolver?(template) else {
             throw DTFError(message: "Template '\(template)' not found")
         }
+        // Note: render(xml:context:) now handles parse errors gracefully by returning raw content
         return try render(xml: templateContent, context: context)
     }
 
@@ -357,6 +378,7 @@ public final class TALEngineXML {
         guard let templateContent = templateResolver?(template) else {
             throw DTFError(message: "Template '\(template)' not found")
         }
+        // Note: renderAsync(xml:context:) now handles parse errors gracefully by returning raw content
         return try await renderAsync(xml: templateContent, context: context)
     }
     

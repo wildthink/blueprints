@@ -108,7 +108,7 @@ public final class TALEngine {
     public func render(xml: String, context: [String: Any]) throws -> String {
         let doc = try XMLDocument(
             xmlString: xml,
-            options: [.nodePreserveAll, .nodeCompactEmptyElement, .documentTidyHTML])
+            options: [.nodeCompactEmptyElement, .documentTidyHTML, .documentTidyXML])
         guard let root = doc.rootElement() else { return xml }
         let ctx = TALContext(context)
         try process(node: root, ctx: ctx)

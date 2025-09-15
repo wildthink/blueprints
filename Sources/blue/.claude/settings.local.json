@@ -8,7 +8,11 @@
       "Bash(echo $PATH)",
       "Bash(swiftly list:*)",
       "Bash(export:*)",
-      "Bash(swift build)"
+      "Bash(swift build)",
+      "Bash(cat:*)",
+      "Bash(python3:*)",
+      "Bash(npx serve:*)",
+      "Bash(openssl req:*)"
     ],
     "deny": [],
     "ask": []

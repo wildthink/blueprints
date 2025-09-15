@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal" tal:define="site_name site.name|default:'3rd Space'; current_year '2024'">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title tal:content="page.title|default:'3rd Space - Community Concierge'">3rd Space - Community Concierge</title>
-    <meta name="description" tal:attributes="content page.description|default:'Discover local people, places, companies, events, and services in your area'">
+    <meta name="description" tal:attributes="content page.description|default:'Discover local people, places, companies, events, and services in your area'"/>
 
     <!-- Conditional CSS loading -->
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css"/>
     <style tal:condition="page.customCSS" tal:content="page.customCSS|raw"></style>
 
     <!-- SEO and Meta Tags -->
-    <meta name="keywords" tal:condition="page.keywords" tal:attributes="content page.keywords">
-    <meta property="og:title" tal:attributes="content page.title|default:site_name">
-    <meta property="og:description" tal:attributes="content page.description|default:'Community discovery platform'">
-    <meta property="og:type" content="website">
+    <meta name="keywords" tal:condition="page.keywords" tal:attributes="content page.keywords"/>
+    <meta property="og:title" tal:attributes="content page.title|default:site_name"/>
+    <meta property="og:description" tal:attributes="content page.description|default:'Community discovery platform'"/>
+    <meta property="og:type" content="website"/>
 
     <!-- Page-specific head content -->
     <tal:block tal:slot="head_extra"></tal:block>

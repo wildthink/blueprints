@@ -38,8 +38,101 @@ public extension DocumentTree {
     }
 
     init (xml: String) throws {
-        let doc = try XMLDocument(xmlString: xml, options: [.nodePreserveAll, .nodeCompactEmptyElement])
+        // Try to parse as-is first
+        var xmlString = xml
+        do {
+            let doc = try XMLDocument(xmlString: xmlString, options: [.nodePreserveAll, .nodeCompactEmptyElement])
+            try self.init(xmlDocument: doc)
+            return
+        } catch {
+            // If parsing fails, try to fix common XML issues
+            xmlString = try Self.fixXMLIssues(xml)
+        }
+
+        // Try again with namespace fixes
+        let doc = try XMLDocument(xmlString: xmlString, options: [.nodePreserveAll, .nodeCompactEmptyElement])
         try self.init(xmlDocument: doc)
+    }
+
+    /// Attempts to fix common XML issues to make parsing more forgiving
+    private static func fixXMLIssues(_ xml: String) throws -> String {
+        var result = addMissingNamespaces(to: xml)
+        result = fixUnclosedTags(result)
+        return result
+    }
+
+    /// Attempts to add missing TAL namespace declarations to make XML parsing more forgiving
+    private static func addMissingNamespaces(to xml: String) -> String {
+        var result = xml
+
+        // Check if TAL namespace is already declared
+        let hasXmlnsTal = result.contains("xmlns:tal=")
+
+        // If we find tal: attributes but no namespace declaration, add it
+        if !hasXmlnsTal && result.contains("tal:") {
+            // For fragments, wrap in a root element with the namespace
+            if !result.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("<?xml") {
+                result = "<div xmlns:tal=\"http://xml.zope.org/namespaces/tal\">\n\(result)\n</div>"
+            } else {
+                // For full documents, try to add to the first tag with tal: attributes
+                if let range = result.range(of: #"<[^>]*\btal:"#, options: .regularExpression) {
+                    // Find the opening tag that contains this tal: attribute
+                    let startIndex = result[..<range.lowerBound].lastIndex(of: "<") ?? range.lowerBound
+                    if let endIndex = result[range.lowerBound...].firstIndex(of: ">") {
+                        let tagRange = startIndex..<endIndex
+                        let tagContent = String(result[tagRange])
+
+                        // Insert the namespace declaration into this tag
+                        if let spaceIndex = tagContent.firstIndex(of: " ") {
+                            let tagName = String(tagContent[tagContent.index(after: tagContent.startIndex)..<spaceIndex])
+                            let restOfTag = String(tagContent[spaceIndex...])
+                            let newTag = "<\(tagName) xmlns:tal=\"http://xml.zope.org/namespaces/tal\"\(restOfTag)"
+                            result.replaceSubrange(tagRange, with: newTag)
+                        }
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
+    /// Fixes common unclosed tag issues
+    private static func fixUnclosedTags(_ xml: String) -> String {
+        var result = xml
+
+        // Fix unclosed <br> tags - replace with self-closing
+        result = result.replacingOccurrences(
+            of: #"<br\b([^>]*)>(?!</br>)"#,
+            with: "<br$1/>",
+            options: .regularExpression
+        )
+
+        // Fix unclosed <input> tags - replace with self-closing
+        result = result.replacingOccurrences(
+            of: #"<input\b([^>]*)>(?!</input>)"#,
+            with: "<input$1/>",
+            options: .regularExpression
+        )
+
+        // Fix unclosed <img> tags - replace with self-closing
+        result = result.replacingOccurrences(
+            of: #"<img\b([^>]*)>(?!</img>)"#,
+            with: "<img$1/>",
+            options: .regularExpression
+        )
+
+        // Fix HTML boolean attributes (required, checked, etc.) to have explicit values
+        let booleanAttrs = ["required", "checked", "selected", "disabled", "readonly", "multiple", "autofocus"]
+        for attr in booleanAttrs {
+            result = result.replacingOccurrences(
+                of: #"\b\#(attr)\b(?!=)"#,
+                with: "\(attr)=\"\(attr)\"",
+                options: .regularExpression
+            )
+        }
+
+        return result
     }
 
     /// Converts the DocumentTree back to an XMLDocument for pretty-printing or further processing

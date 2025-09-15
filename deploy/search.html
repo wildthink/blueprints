@@ -1,0 +1,87 @@
+<!-- XML Parsing Error: Error Domain=NSXMLParserErrorDomain Code=73 "Line 20: attributes construct error
+Line 20: Couldn't find end of Start Tag input
+" UserInfo={NSLocalizedDescription=Line 20: attributes construct error
+Line 20: Couldn't find end of Start Tag input
+} -->
+<!-- Raw content follows: -->
+    <main class="main">
+        <section class="search-results">
+            <div class="container">
+                <div class="search-header">
+                    <h1 tal:content="results.title">Search Results</h1>
+                    <p class="search-meta">
+                        <span tal:content="results.count">42</span> results for
+                        <strong tal:content="search.query">"coffee shops"</strong>
+                        <span tal:condition="search.location">in <strong tal:content="search.location">San Francisco</strong></span>
+                    </p>
+                </div>
+
+                <div class="search-layout">
+                    <div class="search-filters">
+                        <h3>Filters</h3>
+                        <div class="filter-group">
+                            <h4>Type</h4>
+                            <label class="filter-item" tal:repeat="type filters.types">
+                                <input type="checkbox" tal:attributes="name type.name; checked type.checked">
+                                <span tal:content="type.label">People</span>
+                                <span class="filter-count" tal:content="type.count">(12)</span>
+                            </label>
+                        </div>
+
+                        <div class="filter-group" tal:condition="filters.distance">
+                            <h4>Distance</h4>
+                            <label class="filter-item" tal:repeat="dist filters.distance">
+                                <input type="radio" name="distance" tal:attributes="value dist.value; checked dist.checked">
+                                <span tal:content="dist.label">Within 5 miles</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="search-content">
+                        <div class="result-cards">
+                            <div class="result-card" tal:repeat="result results.items" tal:attributes="class result.cardClass">
+                                <div class="card-header">
+                                    <div class="card-type" tal:content="result.type">Person</div>
+                                    <div class="card-meta" tal:content="result.distance">0.3 miles</div>
+                                </div>
+
+                                <div class="card-content">
+                                    <h3 class="card-title" tal:content="result.title">Sarah Chen</h3>
+                                    <p class="card-subtitle" tal:content="result.subtitle">Coffee Shop Owner</p>
+                                    <p class="card-description" tal:content="result.description">Passionate about community and great coffee. Owner of Brew & Gather, a local favorite.</p>
+
+                                    <div class="card-connections" tal:condition="result.connections">
+                                        <h4>Connected to:</h4>
+                                        <div class="connection-tags">
+                                            <a href="#" class="connection-tag" tal:repeat="conn result.connections" tal:content="conn.name">Brew & Gather</a>
+                                        </div>
+                                    </div>
+
+                                    <div class="card-details">
+                                        <div class="detail-item" tal:repeat="detail result.details">
+                                            <span class="detail-label" tal:content="detail.label">Location:</span>
+                                            <span class="detail-value" tal:content="detail.value">Downtown</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-actions">
+                                    <button class="btn btn-outline btn-small" tal:repeat="action result.actions" tal:content="action.label">View Profile</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="search-pagination" tal:condition="pagination.show">
+                            <div class="pagination">
+                                <a href="#" class="page-btn" tal:condition="pagination.prev">← Previous</a>
+                                <span class="page-numbers">
+                                    <a href="#" class="page-number" tal:repeat="page pagination.pages" tal:attributes="class page.class" tal:content="page.number">1</a>
+                                </span>
+                                <a href="#" class="page-btn" tal:condition="pagination.next">Next →</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
