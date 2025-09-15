@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Read(//Users/jason/dev/workshop/Packages/blueprints/**)",
-      "Read(//Users/jason/dev/workshop/**)"
+      "Read(//Users/jason/dev/workshop/**)",
+      "Bash(swift run:*)",
+      "Bash(swift --version)",
+      "Bash(echo $PATH)",
+      "Bash(swiftly list:*)",
+      "Bash(export:*)",
+      "Bash(swift build)"
     ],
     "deny": [],
     "ask": []

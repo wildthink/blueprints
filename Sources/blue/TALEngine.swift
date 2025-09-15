@@ -827,7 +827,7 @@ public final class TALEngineXML {
 
         // Add attributes (excluding TAL attributes)
         for attr in dtfNode.attributes where attr.qname.ns != "tal" {
-            let attrName = attr.qname.description
+            let attrName = attr.qname.name  // Use local name only for HTML output
             let attrValue = attr.shouldEscape ? attr.value.escape() : attr.value
             result += " \(attrName)=\"\(attrValue)\""
         }

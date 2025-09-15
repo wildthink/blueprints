@@ -7,16 +7,25 @@ func testTALEngine() {
     do {
         let engine = TALEngineXML()
 
-        // Test tal:_attribute syntax
+        // Test tal:_attribute syntax and namespace fix
         let xml1 = """
     <div xmlns:tal="http://xml.zope.org/namespaces/tal">
-        <a tal:_href="baseURL" tal:_title="linkTitle">Click here</a>
+        <form class="search-form" tal:attributes="action baseURL" method="GET">
+            <a tal:_href="baseURL" tal:_title="linkTitle">Click here</a>
+        </form>
     </div>
     """
         let ctx1: [String: Any] = ["baseURL": "https://example.com", "linkTitle": "Example Site"]
         let result1 = try engine.render(xml: xml1, context: ctx1)
-        print("Test 1 - tal:_attribute syntax:")
+        print("Test 1 - tal:_attribute syntax and namespace fix:")
         print(result1)
+
+        // Check for namespace bug (malformed attributes with colon prefix)
+        if result1.contains(" :class=") || result1.contains(" :action=") || result1.contains(" :method=") {
+            print("❌ NAMESPACE BUG DETECTED: Found malformed attribute with colon prefix")
+        } else {
+            print("✅ NAMESPACE FIX VERIFIED: No malformed attributes found")
+        }
         print("")
 
         // Test simple tal:content

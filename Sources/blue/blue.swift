@@ -6,37 +6,7 @@ import Foundation
 @main
 struct BlueMain {
     static func main() async throws {
-        print("Hello, world")
-        
-        let output_dir = URL(fileURLWithPath: #filePath)
-            .appendingPathComponent("../../../")
-            .appending(components: "site")
-            .standardized
-
-        let output = URL(fileURLWithPath: #filePath)
-            .appendingPathComponent("../../../")
-            .appending(components: "site", "index.html")
-            .standardized
-        
         try await createExampleSite()
-
-//        return try String(Greeting(name: name))
-
-        // Render the page
-//        let page = WelcomePage(userName: "Alice")
-        
-        let site = Site {
-            "Okay"
-            WelcomePage(userName: "Alice")
-//                .page(name: "index")
-        }
-        try site.builtin.run(environment: .init())
-//        try site.save(to: output_dir)
-        
-//        let html = try String(page)
-//        try html.write(to: output, atomically: true, encoding: .utf8)
-
-//        let html = Data(site().render())
     }
 }
 extension RuleBuilder {

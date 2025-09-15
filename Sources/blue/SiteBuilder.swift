@@ -35,12 +35,7 @@ public struct XtContext: Sendable, ExpressibleByDictionaryLiteral {
     @_disfavoredOverload
     subscript(key: String) -> [String : XtValue]? {
         get { values[key] as? [String : XtValue] }
-        set {
-//            if let newValue = newValue  {
-                values[key] = newValue
-//            }
-        }
-//        set { values[key] = (newValue as? any XtValue) }
+        set { values[key] = newValue }
     }
 
     subscript(key: String) -> (any XtValue)? {
@@ -54,12 +49,12 @@ public struct XtContext: Sendable, ExpressibleByDictionaryLiteral {
         set { values[key] = newValue }
     }
     
-    func mapValues<T>(_ transform: (Value) throws -> T) rethrows -> Dictionary<Key, T> {
+    func mapValues<T>(_ transform: (any XtValue) throws -> T) rethrows -> Dictionary<String, T> {
         try values.mapValues(transform)
     }
     
     func toAnyDictionary() -> [String:Any] {
-        [:]
+        values.toAnyDictionary()
     }
 }
 
@@ -303,7 +298,9 @@ public actor SiteBuilder {
     @_disfavoredOverload
     public func updateGlobalContext(_ updates: [String:Any]) {
         for (key, value) in updates {
-//            globalContext[key] = value
+            if let xtValue = value as? (any XtValue) {
+                globalContext[key] = xtValue
+            }
         }
     }
 
@@ -435,6 +432,90 @@ public actor SiteBuilder {
 // MARK: - Site Builder Extensions
 
 public extension SiteBuilder {
+    /// Create a SiteBuilder by scanning the current project (Smart Path Resolution)
+    static func autoConfigured(name: String? = nil) async throws -> SiteBuilder {
+        let scanner = ProjectScanner()
+        return try await scanner.createSiteBuilder(name: name)
+    }
+
+    // MARK: - Template Patterns (Option 5)
+
+    /// Quick setup for blog sites
+    static func blog(name: String) async throws -> SiteBuilder {
+        let scanner = ProjectScanner()
+        let builder = try await scanner.createSiteBuilder(name: name)
+
+        // Add blog-specific pages
+        await builder.addPages([
+            Page(path: "index.html", template: "pages/index.html", context: [:]),
+            Page(path: "blog.html", template: "pages/blog.html", context: [:]),
+            Page(path: "post.html", template: "pages/post.html", context: [:]),
+            Page(path: "about.html", template: "pages/about.html", context: [:]),
+            Page(path: "contact.html", template: "pages/contact.html", context: [:])
+        ])
+
+        await builder.updateGlobalContext([
+            "nav": [
+                "home": "Home",
+                "blog": "Blog",
+                "about": "About",
+                "contact": "Contact"
+            ],
+            "site_type": "blog"
+        ] as XtContext)
+
+        return builder
+    }
+
+    /// Quick setup for portfolio sites
+    static func portfolio(name: String) async throws -> SiteBuilder {
+        let scanner = ProjectScanner()
+        let builder = try await scanner.createSiteBuilder(name: name)
+
+        await builder.addPages([
+            Page(path: "index.html", template: "pages/index.html", context: [:]),
+            Page(path: "portfolio.html", template: "pages/portfolio.html", context: [:]),
+            Page(path: "about.html", template: "pages/about.html", context: [:]),
+            Page(path: "contact.html", template: "pages/contact.html", context: [:])
+        ])
+
+        await builder.updateGlobalContext([
+            "nav": [
+                "home": "Home",
+                "work": "Portfolio",
+                "about": "About",
+                "contact": "Contact"
+            ],
+            "site_type": "portfolio"
+        ] as XtContext)
+
+        return builder
+    }
+
+    /// Quick setup for business/company sites
+    static func business(name: String) async throws -> SiteBuilder {
+        let scanner = ProjectScanner()
+        let builder = try await scanner.createSiteBuilder(name: name)
+
+        await builder.addStandardPages()
+        await builder.addPages([
+            Page(path: "services.html", template: "pages/services.html", context: [:]),
+            Page(path: "pricing.html", template: "pages/pricing.html", context: [:])
+        ])
+
+        await builder.updateGlobalContext([
+            "nav": [
+                "home": "Home",
+                "services": "Services",
+                "pricing": "Pricing",
+                "about": "About",
+                "contact": "Contact"
+            ],
+            "site_type": "business"
+        ] as XtContext)
+
+        return builder
+    }
     
     /// Quick setup for common site structures
     static func createStandardSite(name: String, baseURL: String = "https://localhost:8080") async -> SiteBuilder {
@@ -453,7 +534,7 @@ public extension SiteBuilder {
             ]
         )
         
-        return await SiteBuilder(config: config)
+        return SiteBuilder(config: config)
     }
     
     /// Add common pages for a standard website
@@ -501,58 +582,14 @@ extension NumberFormatter {
 // MARK: - Example Usage
 
 public func createExampleSite() async throws {
-    // Create a site builder
-    let builder = await SiteBuilder.createStandardSite(name: "3rd Space")
-    
-    // Add custom global context
-    await builder.updateGlobalContext([
-        "hero": [
-            "title": "Find Your Community",
-            "subtitle": "Discover local people, places, companies, events, and services in your area"
-        ],
-        "features": [
-            "title": "What You'll Find",
-            "items": [
-                [
-                    "title": "People",
-                    "description": "Connect with local community members",
-                    "icon": "👥"
-                ],
-                [
-                    "title": "Places",
-                    "description": "Discover restaurants, shops, and local businesses",
-                    "icon": "📍"
-                ]
-            ]
-        ]
-    ])
-    
-    // Add standard pages
-    await builder.addStandardPages()
-    
-    // Add custom pages
-    await builder.addPage(Page(
-        path: "pricing.html",
-        template: "pages/pricing.html",
-        context: [
-            "page": ["title": "Pricing - 3rd Space"],
-            "plans": [
-                [
-                    "name": "Basic",
-                    "price": "0",
-                    "features": ["Community search", "Basic profiles"]
-                ],
-                [
-                    "name": "Pro",
-                    "price": "9.99",
-                    "features": ["Everything in Basic", "Advanced search", "Event creation"]
-                ]
-            ]
-        ]
-    ))
-    
-    // Build the site
-    try await builder.build()
-    
-    print("✨ Example site built successfully!")
+    // Option 1: Completely automatic discovery (Smart Path Resolution + Auto-Discovery)
+    let autoSite = try await SiteBuilder.autoConfigured(name: "3rd Space")
+    try await autoSite.build()
+
+    print("\n" + String(repeating: "=", count: 50))
+    print("✨ Successfully built site using auto-configuration!")
+    print("📁 Templates discovered automatically from Resources/templates")
+    print("🚀 Output written to deploy/ directory")
+    print("🔍 Context loaded from Resources/sample-context.json")
+    print(String(repeating: "=", count: 50))
 }
