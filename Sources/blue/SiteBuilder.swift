@@ -110,18 +110,21 @@ public struct SiteConfig: @unchecked Sendable {
     public let outputPath: String
     public let assetsPath: String?
     public let defaultContext: XtContext
-    
+    public let prettyPrintHTML: Bool
+
     public init(
         name: String,
         baseURL: String = "https://localhost:8080",
         templatesPath: String = "Resources/templates",
         outputPath: String = "deploy",
         assetsPath: String? = "Resources/assets",
-        defaultContext: XtContext = [:]
+        defaultContext: XtContext = [:],
+        prettyPrintHTML: Bool = false
     ) {
         self.name = name
         self.baseURL = baseURL
         self.defaultContext = defaultContext
+        self.prettyPrintHTML = prettyPrintHTML
         // FIXME: jmj
         self.templatesPath = project_dir
             .appending(path: templatesPath)
@@ -178,7 +181,7 @@ public actor TALEngineActor {
     public func renderAsync(template: String, context: XtContext) async throws -> String {
         // Bridge to [String: Any] *inside* this actor to avoid crossing with non-Sendable payloads
         let anyContext = context.toAnyDictionary()
-        return try engine.render(template: template, context: anyContext)
+        return try engine.render(template: template, context: anyContext, prettyPrint: config.prettyPrintHTML)
 //        return try await engine.renderAsync(template: template, context: anyContext)
     }
 }
@@ -363,7 +366,7 @@ public actor SiteBuilder {
         pageContext["page"] = pageInfo
         
         // Render the page
-        let html = try await engine.renderAsync(template: page.template, context: pageContext)
+        let html = try await engine.renderAsync(template: page.template, context: pageContext, prettyPrint: config.prettyPrintHTML)
         
         // Determine output path
         let outputPath = page.outputPath ?? page.path
@@ -425,7 +428,7 @@ public actor SiteBuilder {
     public func buildSinglePage(template: String, context: XtContext = [:]) async throws -> String {
         var pageContext = globalContext
         for (key, value) in context { pageContext[key] = value }
-        return try await engine.renderAsync(template: template, context: pageContext)
+        return try await engine.renderAsync(template: template, context: pageContext, prettyPrint: config.prettyPrintHTML)
     }
 }
 
@@ -436,6 +439,25 @@ public extension SiteBuilder {
     static func autoConfigured(name: String? = nil) async throws -> SiteBuilder {
         let scanner = ProjectScanner()
         return try await scanner.createSiteBuilder(name: name)
+    }
+
+    /// Create a SiteBuilder with pretty-printed HTML output
+    static func autoConfiguredPretty(name: String? = nil) async throws -> SiteBuilder {
+        let scanner = ProjectScanner()
+        var builder = try await scanner.createSiteBuilder(name: name)
+
+        // Update config to enable pretty printing
+        let prettyConfig = SiteConfig(
+            name: builder.config.name,
+            baseURL: builder.config.baseURL,
+            templatesPath: builder.config.templatesPath,
+            outputPath: builder.config.outputPath,
+            assetsPath: builder.config.assetsPath,
+            defaultContext: builder.config.defaultContext,
+            prettyPrintHTML: true
+        )
+        builder = SiteBuilder(config: prettyConfig)
+        return builder
     }
 
     // MARK: - Template Patterns (Option 5)

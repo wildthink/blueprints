@@ -327,13 +327,13 @@ public final class TALEngineXML {
         self.templateResolver = templateResolver
     }
 
-    public func render(xml: String, context: [String: Any]) throws -> String {
+    public func render(xml: String, context: [String: Any], prettyPrint: Bool = false) throws -> String {
         do {
             let tree = try DocumentTree(xml: xml)
             let ctx = TALContext(context)
             let processed = try process(elem: tree.root, ctx: ctx) // may return nil if removed by condition
             guard let out = processed else { return "" }
-            return serialize(elem: out)
+            return serialize(elem: out, prettyPrint: prettyPrint)
         } catch {
             // If XML parsing fails, output the raw content with a debug comment
             print("⚠️  XML parsing failed, outputting raw content: \(error)")
@@ -346,13 +346,13 @@ public final class TALEngineXML {
     }
 
     /// Async render with full modifier support
-    public func renderAsync(xml: String, context: [String: Any]) async throws -> String {
+    public func renderAsync(xml: String, context: [String: Any], prettyPrint: Bool = false) async throws -> String {
         do {
             let tree = try DocumentTree(xml: xml)
             let ctx = TALContext(context)
             let processed = try await processAsync(elem: tree.root, ctx: ctx)
             guard let out = processed else { return "" }
-            return serialize(elem: out)
+            return serialize(elem: out, prettyPrint: prettyPrint)
         } catch {
             // If XML parsing fails, output the raw content with a debug comment
             print("⚠️  XML parsing failed, outputting raw content: \(error)")
@@ -365,21 +365,21 @@ public final class TALEngineXML {
     }
 
     /// Render with template inheritance support
-    public func render(template: String, context: [String: Any]) throws -> String {
+    public func render(template: String, context: [String: Any], prettyPrint: Bool = false) throws -> String {
         guard let templateContent = templateResolver?(template) else {
             throw DTFError(message: "Template '\(template)' not found")
         }
         // Note: render(xml:context:) now handles parse errors gracefully by returning raw content
-        return try render(xml: templateContent, context: context)
+        return try render(xml: templateContent, context: context, prettyPrint: prettyPrint)
     }
 
     /// Async render with template inheritance support
-    public func renderAsync(template: String, context: [String: Any]) async throws -> String {
+    public func renderAsync(template: String, context: [String: Any], prettyPrint: Bool = false) async throws -> String {
         guard let templateContent = templateResolver?(template) else {
             throw DTFError(message: "Template '\(template)' not found")
         }
         // Note: renderAsync(xml:context:) now handles parse errors gracefully by returning raw content
-        return try await renderAsync(xml: templateContent, context: context)
+        return try await renderAsync(xml: templateContent, context: context, prettyPrint: prettyPrint)
     }
     
     // MARK: - Processing
@@ -826,7 +826,7 @@ public final class TALEngineXML {
         return DTFNode(tag: node.qname, attributes: newAttributes, children: node.children)
     }
 
-    private func serialize(elem: any Element) -> String {
+    private func serialize(elem: any Element, prettyPrint: Bool = false) -> String {
         if let dtfValue = elem as? DTFValue {
             // This is a text node or attribute - respect the shouldEscape flag
             if dtfValue.qname.name == "text" {
@@ -841,7 +841,13 @@ public final class TALEngineXML {
 
         // Special case: repeat-container should render its children without the container tag
         if dtfNode.qname.name == "repeat-container" {
-            return dtfNode.children.map { serialize(elem: $0) }.joined()
+            return dtfNode.children.map { serialize(elem: $0, prettyPrint: prettyPrint) }.joined()
+        }
+
+        // If pretty printing is enabled, use DocumentTree conversion
+        if prettyPrint {
+            let tempTree = DocumentTree(qname: dtfNode.qname, namespace: nil, attributes: dtfNode.attributes, root: dtfNode)
+            return tempTree.prettyPrint()
         }
 
         let tagName = dtfNode.qname.name
@@ -859,7 +865,7 @@ public final class TALEngineXML {
         } else {
             result += ">"
             for child in dtfNode.children {
-                result += serialize(elem: child)
+                result += serialize(elem: child, prettyPrint: prettyPrint)
             }
             result += "</\(tagName)>"
         }
